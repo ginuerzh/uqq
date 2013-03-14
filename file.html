@@ -1,0 +1,578 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US">
+<head profile="http://gmpg.org/xfn/11">
+	<title>KDAB - QML Engine Internals, Part 1: QML File Loading</title>
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+	<meta name="robots" content="index,follow" />
+
+	<link rel="canonical" href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/" />
+
+	<link rel="stylesheet" type="text/css" href="http://www.kdab.com/wp-content/themes/kdab_theme/style.css" />
+
+	<link rel="pingback" href="http://www.kdab.com/xmlrpc.php" />
+
+<link rel="alternate" type="application/rss+xml" title=" &raquo; Feed" href="http://www.kdab.com/feed/" />
+<link rel="alternate" type="application/rss+xml" title=" &raquo; Comments Feed" href="http://www.kdab.com/comments/feed/" />
+
+			<script type="text/javascript">//<![CDATA[
+			// Google Analytics for WordPress by Yoast v4.2.8 | http://yoast.com/wordpress/google-analytics/
+			var _gaq = _gaq || [];
+			_gaq.push(['_setAccount', 'UA-23668815-1']);
+							_gaq.push(['_trackPageview']);
+			(function () {
+				var ga = document.createElement('script');
+				ga.type = 'text/javascript';
+				ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+				var s = document.getElementsByTagName('script')[0];
+				s.parentNode.insertBefore(ga, s);
+			})();
+			//]]></script>
+			<link rel="alternate" type="application/rss+xml" title=" &raquo; QML Engine Internals, Part 1: QML File Loading Comments Feed" href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/feed/" />
+<link rel='stylesheet' id='cptchStylesheet-css'  href='http://www.kdab.com/wp-content/plugins/captcha/css/style.css?ver=3.5.1' type='text/css' media='all' />
+<link rel='stylesheet' id='wp3_soap_connector_style-css'  href='http://www.kdab.com/wp-content/plugins/wp3_soap_connector/css/wp3_soap_connector_style.css?ver=3.5.1' type='text/css' media='all' />
+<link rel='stylesheet' id='jetpack-widgets-css'  href='http://www.kdab.com/wp-content/plugins/jetpack/modules/widgets/widgets.css?ver=20121003' type='text/css' media='all' />
+<link rel='stylesheet' id='sharedaddy-css'  href='http://www.kdab.com/wp-content/plugins/jetpack/modules/sharedaddy/sharing.css?ver=2.1.2' type='text/css' media='all' />
+<link rel='stylesheet' id='core3.0-css'  href='http://www.kdab.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/styles/shCore.css?ver=3.0' type='text/css' media='all' />
+<link rel='stylesheet' id='core-Default3.0-css'  href='http://www.kdab.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/styles/shCoreDefault.css?ver=3.0' type='text/css' media='all' />
+<link rel='stylesheet' id='theme-Default3.0-css'  href='http://www.kdab.com/wp-content/plugins/wp-syntaxhighlighter/syntaxhighlighter3/styles/shThemeDefault.css?ver=3.0' type='text/css' media='all' />
+<script type='text/javascript' src='http://www.kdab.com/wp-includes/js/jquery/jquery.js?ver=1.8.3'></script>
+<script type='text/javascript' src='http://www.kdab.com/wp-includes/js/comment-reply.min.js?ver=3.5.1'></script>
+<script type='text/javascript' src='http://www.kdab.com/wp-content/plugins/email-obfuscator/rot13.js'></script>
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://www.kdab.com/xmlrpc.php?rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://www.kdab.com/wp-includes/wlwmanifest.xml" /> 
+<link rel='prev' title='Last week in Qt development (week 29 2012)' href='http://www.kdab.com/last-week-in-qt-development-week-29-2012/' />
+<link rel='next' title='Last week in Qt development (week 30 2012)' href='http://www.kdab.com/last-week-in-qt-development-week-30-2012/' />
+
+<link rel='canonical' href='http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/' />
+<link rel='shortlink' href='http://wp.me/p2b2Fz-D9' />
+
+<!-- WP SyntaxHighlighter Ver.1.7.3 CSS for code Begin -->
+<style type='text/css'>
+.syntaxhighlighter,
+.syntaxhighlighter a,
+.syntaxhighlighter div,
+.syntaxhighlighter code,
+.syntaxhighlighter table,
+.syntaxhighlighter table td,
+.syntaxhighlighter table tr,
+.syntaxhighlighter table tbody,
+.syntaxhighlighter table thead,
+.syntaxhighlighter table caption,
+.syntaxhighlighter textarea {
+font-size: 11px !important; /* Set the font size in pixels */  
+font-family: "Consolas", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace !important; /* Set the font type */  
+}
+.syntaxhighlighter table caption {
+/* For Title(Caption) */  
+font-size: 14px !important; /* Set the font size in pixels */  
+font-family: "Consolas", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace !important; /* Set the font type */  
+}
+.syntaxhighlighter.nogutter td.code .line {
+/* Set the left padding space when no-gutter in ver. 3.0 */  
+padding-left: 30px !important;
+padding-top:2px !important;
+padding-bottom:2px !important;
+}
+.syntaxhighlighter {
+/* For Chrome/Safari(WebKit) */  
+/* Hide the superfluous vertical scrollbar in ver. 3.0 */  
+overflow-y: hidden !important;
+padding: 1px !important;
+}
+.widget-area.syntaxhighlighter a,
+.widget-area.syntaxhighlighter div,
+.widget-area.syntaxhighlighter code,
+.widget-area.syntaxhighlighter table,
+.widget-area.syntaxhighlighter table td,
+.widget-area.syntaxhighlighter table tr,
+.widget-area.syntaxhighlighter table tbody,
+.widget-area.syntaxhighlighter table thead,
+.widget-area.syntaxhighlighter table caption,
+.widget-area.syntaxhighlighter textarea {
+/* For Widget */  
+font-size: 14px !important; /* Set the font size in pixels */  
+font-family: "Consolas", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace !important; /* Set the font type */  
+}
+.widget-area table caption {
+/* For Widget */  
+/* For Title(Caption) */  
+font-size: 10px !important; /* Set the font size in pixels */  
+font-family: "Consolas", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace !important; /* Set the font type */  
+}
+div.line {lheight:25px;}
+
+
+</style>
+<!-- WP SyntaxHighlighter Ver.1.7.3 CSS for code End -->
+
+<!-- Jetpack Open Graph Tags -->
+<meta property="og:type" content="article" />
+<meta property="og:title" content="QML Engine Internals, Part 1: QML File Loading" />
+<meta property="og:url" content="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/" />
+<meta property="og:description" content="In this series of blog posts, we&#039;ll look under the hood of the QML engine and uncover some of its inner workings. The articles are based on the Qt5 version of QtQuick, QtQuick 2.0. Most people know..." />
+<meta property="og:image" content="http://www.kdab.com/wp-content/uploads/stories/gammaray-quick-1024x558.png" />
+<meta property="og:image" content="http://www.kdab.com/wp-content/uploads/stories/qmlprofiler_loading-1024x307.png" />
+<meta property="og:image" content="http://www.kdab.com/wp-content/uploads/stories/ast-big-1024x343.png" />
+     <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+      <link href="http://www.kdab.com/wp-content/themes/kdab_theme/tabs.css" rel="stylesheet" type="text/css"/> 
+     <!-- <script type="text/javascript" src="http://www.kdab.com/wp-content/themes/kdab_theme/js/jquery.min.js"></script> -->
+     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+     <script type="text/javascript" src="http://www.kdab.com/wp-content/themes/kdab_theme/js/jquery.cycle.all.min.js"></script>
+     <script type="text/javascript" src="http://www.kdab.com/wp-content/themes/kdab_theme/js/script.js"></script>
+     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+     	<meta name="keywords" content="qt, cascades, cross-platform, programming, software, c++, qt training, qt add-ons, qt consulting" />
+
+
+	<script type="text/javascript" src="http://www.kdab.com/wp-content/themes/thematic/library/scripts/hoverIntent.js"></script>
+	<script type="text/javascript" src="http://www.kdab.com/wp-content/themes/thematic/library/scripts/superfish.js"></script>
+	<script type="text/javascript" src="http://www.kdab.com/wp-content/themes/thematic/library/scripts/supersubs.js"></script>
+	<script type="text/javascript" src="http://www.kdab.com/wp-content/themes/thematic/library/scripts/thematic-dropdowns.js"></script>
+
+	<script type="text/javascript">
+		/*<![CDATA[*/
+		jQuery.noConflict();
+		/*]]>*/
+	</script>
+<script type="text/javascript">
+//<![CDATA[
+	var screen_res = ""; 
+	function writeCookie(name,value,hours) {
+		var the_cookie = name+"="+escape(value)+"; expires=";
+		var expires = "";
+		hours=hours+0; //convert to number
+		if (hours > 0) { //0==expires on browser close
+			var cdate = new Date();
+			cdate.setTime(cdate.getTime()+(hours*60*60*1000));
+			expires = expires+cdate.toGMTString();
+		} 
+		document.cookie = the_cookie+expires+"; path=/; domain=";
+	}
+	screen_res = screen.width+" x "+screen.height;
+	if (screen_res==" x ") screen_res = window.screen.width+" x "+window.screen.height;
+	if (screen_res==" x ") screen_res = screen.availWidth+" x "+screen.availHeight;
+	if (screen_res!=" x ") { 
+		writeCookie("wassup_screen_res",screen_res,"48"); //keep 2 days
+	} else {
+		screen_res = "";
+	}
+//]]>
+</script>
+		<link rel="stylesheet" id="custom-css-css" type="text/css" href="http://www.kdab.com/?custom-css=1&#038;csblog=1&#038;cscache=6&#038;csrev=3" />
+		
+</head>
+
+<body class="single single-post postid-2427 single-format-standard windows chrome ch">
+
+<div id="wrapper" class="hfeed">   
+
+    <div id="header">
+    
+        <div id="branding">
+
+	
+        <div id="access">
+            <div class="skip-link"><a href="#content" title="Skip navigation to the content">Skip to content</a></div>
+<div id="access-search">
+                <form id="searchform" method="get" action="http://www.kdab.com">
+                    <div>
+                        <input id="s" name="s" type="text" value=" search.." onfocus="if (this.value == ' search..') {this.value = '';}" onblur="this.value = ' search..';" size="32" tabindex="1" />
+                        <!-- <input id="searchsubmit" name="searchsubmit" type="submit" value="Search" tabindex="2" />-->
+                    </div>
+                </form>
+            </div>
+
+			<div class="menu"><ul id="menu-main-menu" class="sf-menu"><li id="menu-item-250" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-home"><a href="http://www.kdab.com/" >Home</a></li>
+<li id="menu-item-3049" class="menu-item menu-item-type-post_type menu-item-object-page"><a href="http://www.kdab.com/services/" >Services</a></li>
+<li id="menu-item-287" class="menu-item menu-item-type-post_type menu-item-object-post"><a href="http://www.kdab.com/training/" >Training</a></li>
+<li id="menu-item-1194" class="menu-item menu-item-type-post_type menu-item-object-page"><a href="http://www.kdab.com/kdab-products/" >Products</a></li>
+<li id="menu-item-2234" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent"><a href="http://www.kdab.com/category/blogs/" >Blog</a></li>
+<li id="menu-item-322" class="menu-item menu-item-type-post_type menu-item-object-post"><a href="http://www.kdab.com/about-us/" >About</a></li>
+<li id="menu-item-418" class="menu-item menu-item-type-post_type menu-item-object-post"><a href="http://www.kdab.com/kdab-contact-details/" >Contact</a></li>
+</ul></div>            
+        </div><!-- #access -->
+		</div><!--  #branding -->
+
+	</div><!-- #header-->
+        <div id="submenu"><div id="nav"<div class="menu-news-container"><ul id="menu-news" class="menu"><li id="menu-item-1230" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent"><a href="http://www.kdab.com/category/blogs/" >KDAB Blogs</a></li>
+</ul></div></div></div>    
+    <div id="main">
+    
+		<div id="container">
+			
+						
+			<div id="content">
+		
+    	        			
+				<div id="post-2427" class="post-2427 post type-post status-publish format-standard hentry category-blogs category-kdab-on-qt category-qmlengineseries"><h1 class="entry-title">QML Engine Internals, Part 1: QML File Loading</h1>
+<div class="entry-meta"><span class="meta-prep meta-prep-entry-date">Published: </span><span class="entry-date"><abbr class="published" title="2012-07-27T08:54:41+0000">July 27, 2012</abbr></span> by Thomas McGuire</div><!-- .entry-meta -->
+					<div class="entry-content">
+<p>In this <a title="series" href="http://www.kdab.com/category/blogs/qmlengineseries/" >series</a> of blog posts, we&#8217;ll look under the hood of the QML engine and uncover some of its inner workings. The articles are based on the Qt5 version of QtQuick, QtQuick 2.0.</p>
+<p>Most people know  that each element in a QML file is backed by a C++ class. When a QML file is loaded, the QML engine somehow creates one C++ object for all elements in the file. In this blog post, we&#8217;ll examine how the QML engine goes from reading a text file to having a complete tree of C++ objects. The <a title="Qt QML Documentation" href="http://doc-snapshot.qt-project.org/5.0/qtqml-main.html#qt-qml-module-documentation" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://doc-snapshot.qt-project.org']);">Qt documentation on QML</a> has extensive descriptions that cover how QML and C++ work together, a read that is well worth the time. In the blog series, I am assuming the parts covered by that documentation are understood.</p>
+<h1>The Example</h1>
+<p>Throughout this post, we&#8217;ll use an example that doesn&#8217;t do any useful or exciting, but covers some interesting parts of the QML functionality:</p>
+<pre>import QtQuick 2.0
+
+Rectangle {
+    id: root
+    width: 360
+    height: width + 50
+    color: &quot;lightsteelblue&quot;
+    property alias myWidth: root.width
+    property int counter: 1
+
+    function reactToClick() {
+        root.counter++
+    }
+
+    Text {
+        id: text
+        text: qsTr(&quot;Hello World: &quot; + counter)
+        anchors.centerIn: parent
+    }
+
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        onClicked: {
+            reactToClick()
+        }
+    }
+}
+</pre>
+<p>This file has three elements in it, <em>Rectangle</em>, <em>Text</em> and <em>MouseArea</em>. These correspond to the C++ classes <a title="QQuickRectangle class" href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/quick/items/qquickrectangle_p.h#line136" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQuickRectangle</a>, <a title="QQuickText class" href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/quick/items/qquicktext_p.h#line55" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQuickText</a> and <a title="QQuickMouseArea class" href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/quick/items/qquickmousearea_p.h#line129" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQuickMouseArea</a>. Those classes are only exported to QML, the C++ versions are private and not available for users of Qt. The elements are drawn using a <a href="http://labs.qt.nokia.com/2010/05/18/a-qt-scenegraph/" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://labs.qt.nokia.com']);">OpenGL scenegraph</a>. Drawing and event handling are both orchestrated by <a title="QQuickView class" href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/quick/items/qquickview.h#line59" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQuickView</a> . The C++ object tree corresponds to the one in the QML file, which we can verify with KDAB&#8217;s <a href="http://www.kdab.com/kdab-products/gammaray/" >Qt introspection tool, Gammaray</a>:</p>
+<p><a href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/gammaray-quick/"  rel="attachment wp-att-2433"><img class="aligncenter size-large wp-image-2433" src="http://www.kdab.com/wp-content/uploads/stories/gammaray-quick-1024x558.png" alt="" width="1024" height="558" /></a></p>
+<p>As expected, the classes QQuickMouseArea and QQuickText show up in the object tree. But what is <em>QQuickRectangle_QML_0</em>? There is no C++ class with such a name in the Qt sources! We&#8217;ll come back to that in a later blog post, for now you can assume that an object of type QQuickRectangle was used.</p>
+<p>Let&#8217;s go a step further and run the application in the <a href="http://labs.qt.nokia.com/2012/02/07/qml-profiler-update/" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://labs.qt.nokia.com']);">QML profiler</a>:</p>
+<p><a href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/qmlprofiler_loading/"  rel="attachment wp-att-2436"><img class="aligncenter size-large wp-image-2436" src="http://www.kdab.com/wp-content/uploads/stories/qmlprofiler_loading-1024x307.png" alt="" width="1024" height="307" /></a> </p>
+<p>We see that a bunch of time is spent setting up the scene, which is the <strong>Creating</strong> phase. This is followed by a bit of <strong>Painting</strong>, which is what we would expect. But what is this <strong>Compiling</strong> phase? Is it creating machine code? Time to dig into the QML file loading code a bit deeper.</p>
+<h1>QML File Loading Steps</h1>
+<p>When loading a QML file, there are 3 distinct steps happening, which we&#8217;ll examine in the following sections:</p>
+<ol>
+<li>Parsing</li>
+<li>Compiling</li>
+<li>Creating</li>
+</ol>
+<h2>Parsing</h2>
+<p>First of all, the QML file is parsed, which is handled by <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlscript_p.h#line463" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQmlScript::Parser</a>. Most of the parser internals are auto-generated from a <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/parser/qqmljs.g" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">grammar file</a>. The abstract syntax tree (AST) of our example looks like this:</p>
+<p><a href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/ast-big/"  rel="attachment wp-att-2437"><img class="aligncenter size-large wp-image-2437" src="http://www.kdab.com/wp-content/uploads/stories/ast-big-1024x343.png" alt="" width="1024" height="343" /></a></p>
+<p style="text-align: center;">(This was generated by graphviz using a dotfile produced with the patch at <a href="http://www.kdab.com/~thomas/stuff/ast-graph.diff" >http://www.kdab.com/~thomas/stuff/ast-graph.diff</a>)</p>
+<p>The AST is quite low-level, therefore it is transformed into a higher level structure of <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlscript_p.h#line299" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">Objects</a>, <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlscript_p.h#line230" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">Properties</a> and <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlscript_p.h#line183" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">Values</a> in the next step. This is done using a <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlscript.cpp#line443" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">visitor</a> on the AST. At this level, Objects correspond to QML elements, and Property/Value pairs to QML properties and values like <em>&#8220;color&#8221;</em> and <em>&#8220;lightsteelblue&#8221;</em>. Even signal handlers like <em>onClicked</em> are just property/value pairs, in this case the value is the Javascript function body.</p>
+<h2>Compiling</h2>
+<p>Now in theory, the structure of Objects, Properties and Values would be enough to examine for creating the associated C++ objects and assigning the values to the properties there. However, the Objects, Properties and Values are still quite raw, and require some post-processing before the C++ objects can be created. This post-processing is done by <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlcompiler_p.h#line283" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQmlCompiler</a>, which explains what the <em>compiling</em> phase we saw in the QML profiler is about. The compiler creates an <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlcompiler_p.h#line79" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQmlCompiledData</a> object for the QML file. Examining QQmlCompiledData and creating C++ objects from it is quite a lot faster than examining the Objects, Properties and Values. When using a QML file multiple times, say for example a Button.qml that is used all over the place in other QML files, Button.qml would only be compiled once. The QQmlCompiledData for Button.qml is kept around, and each time a Button component is used, the C++ objects are created by examining the QQmlCompiledData. The later is the <em>creating</em> phase, which can be seen in the QML profiler output.</p>
+<p>To sum up: Parsing a QML file and compiling it is only done once, after that the QQmlCompiledData object is used to quickly create the C++ objects.</p>
+<h2>Creating</h2>
+<p>I won&#8217;t go into details about QQmlCompiledData, but one thing might have caught your attention: The &#8220;<em>QByteArray bytecode</em>&#8221; member variable. The instructions to create C++ objects and to assign the correct values to its properties are actually compiled to bytecode, which is then later interpreted by a bytecode interpreter! The bytecode contains a bunch of instructions, and the rest of QQmlCompiledData is just used as auxiliary data when executing the instructions.</p>
+<p>In the creating phase, the bytecode is interpreted by the class <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlvme_p.h" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQmlVME</a>. Looking into <em>QQmlVME::run()</em>, the interpreter basically loops over all instructions contained in the bytecode, with a big switch statement for the different instruction types. By running the app with<strong> QML_COMPILER_DUMP=1</strong>, we can see the individual instructions of the bytecode:</p>
+<pre>Index           Operation               Data1   Data2   Data3   Comments
+-------------------------------------------------------------------------------
+0               INIT                    4       3       0       0
+1               INIT_V8_BINDING 0       17
+2               CREATECPP                       0
+3               STORE_META
+4               SETID                   0                       &quot;root&quot;
+5               BEGIN                   16
+6               STORE_INTEGER           45      1
+7               STORE_COLOR             41                      &quot;ffb0c4de&quot;
+8               STORE_COMPILED_BINDING  10      2       0
+9               STORE_DOUBLE            9       360
+10              FETCH_QLIST             2
+11              CREATE_SIMPLE           32
+12              SETID                   1                       &quot;text&quot;
+13              BEGIN                   16
+14              STORE_V8_BINDING        43      0       0
+15              FETCH                   19
+16              STORE_COMPILED_BINDING  17      1       1
+17              POP
+18              STORE_OBJECT_QLIST
+19              CREATE_SIMPLE           32
+20              SETID                   2                       &quot;mouseArea&quot;
+21              BEGIN                   16
+22              STORE_SIGNAL            42      2
+23              FETCH                   19
+24              STORE_COMPILED_BINDING  16      0       1
+25              POP
+26              STORE_OBJECT_QLIST
+27              POP_QLIST
+28              SET_DEFAULT
+29              DONE
+-------------------------------------------------------------------------------
+</pre>
+<p><em>CREATE_SIMPLE</em> is the most important instruction, it creates a C++ object, using a database of registered objects in <a href="http://qt.gitorious.org/qt/qtdeclarative/blobs/master/src/qml/qml/qqmlmetatype_p.h" onclick="javascript:_gaq.push(['_trackEvent','outbound-article','http://qt.gitorious.org']);">QQmlMetaType</a>.<br /><em>STORE_INTEGER</em> is the instruction to write an integer value to a property.<br /><em>STORE_SIGNAL</em> is used to create a bound signal handler.<br /><em>STORE_*_BINDING</em> is used to create a property binding. More about bindings to come in the next blog post of this series.<br /><em>SETID</em> obviously sets the identifier of an object, which is not an ordinary property.</p>
+<p>The VME has a stack of objects, all instructions like <em>STORE_*</em> operate on the top object. <em>FETCH</em> puts a specific QObject on top of the stack, <em>POP</em> removes the top object. All of the instructions make heavy use of integer indices, for example the <em>STORE_COLOR</em> instruction writes to property 41, which is the property index of the target QObject&#8217;s meta object.</p>
+<p>To sum up: Once a QML file is compiled, creating an instance of it is just a matter of executing the bytecode of the compiled data.</p>
+<h1>Conclusion</h1>
+<p>That is the end of this blog post, we have covered on how a QML file is parsed, processed, compiled and later how the objects are actually created by the VME. I hope you gained some interesting insights about the QML engine.</p>
+<p>Stay tuned for the next blog post, in which we&#8217;ll examine how property bindings work.</p>
+<div class="sharedaddy sd-sharing-enabled"><div class="robots-nocontent sd-block sd-social sd-social-icon sd-sharing"><div class="sd-content"><ul><li class="share-facebook"><a rel="nofollow" class="share-facebook sd-button share-icon no-text" href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/?share=facebook"  title="Share on Facebook" id="sharing-facebook-2427"><span></span></a></li><li class="share-twitter"><a rel="nofollow" class="share-twitter sd-button share-icon no-text" href="http://www.kdab.com/qml-engine-internals-part-1-qml-file-loading/?share=twitter"  title="Click to share on Twitter" id="sharing-twitter-2427"><span></span></a></li><li class="share-end"></li></ul><div class="sharing-clear"></div></div></div></div>
+											</div><!-- .entry-content -->
+									</div><!-- #post -->
+					<div id="comments">
+
+
+
+
+
+				<div id="comments-list" class="comments">
+					<h3><span>9</span> Comments</h3>
+				
+					<ol>
+    	<li id="comment-294" class="comment c c-y2012 c-m07 c-d27 c-h14 alt depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://1.gravatar.com/avatar/d593ecff710fdbe6dcaa6cebc2453610?s=80&amp;d=http%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n"><a href="http://blog.edulix.es" onclick="javascript:_gaq.push(['_trackEvent','outbound-commentauthor','http://blog.edulix.es']);"  rel='external nofollow' class='url url'>Eduardo Robles Elvir</a></span></div>
+    		<div class="comment-meta">Posted July 27, 2012 at 1:20 pm <span class="meta-sep">|</span> <a href="#comment-294" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>Really interesting post! I didn&#8217;t know the internals of QML, and they seem quite well thought. For me it&#8217;s been a surprise that there&#8217;s actually a step that compiles to bytecode. Keep the posts coming =)</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=294#respond' onclick='return addComment.moveForm("comment-294", "294", "respond", "2427")'>Reply</a></div>			</li>
+    	<li id="comment-295" class="comment c1 c-y2012 c-m07 c-d27 c-h15 depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://1.gravatar.com/avatar/10b4ae517f6332a96d5c5cd218958201?s=80&amp;d=http%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n">Laszlo Papp</span></div>
+    		<div class="comment-meta">Posted July 27, 2012 at 2:54 pm <span class="meta-sep">|</span> <a href="#comment-295" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>Very useful post. Thank you. <img src='http://www.kdab.com/wp-includes/images/smilies/icon_smile.gif' alt=':-)' class='wp-smiley' /> </p>
+<p>It always bugged me a bit I do not know much about the underlyings.</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=295#respond' onclick='return addComment.moveForm("comment-295", "295", "respond", "2427")'>Reply</a></div>			</li>
+    	<li id="comment-296" class="comment c2 c-y2012 c-m07 c-d28 c-h10 alt depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://0.gravatar.com/avatar/048033a846886d7db5758a07eb209f4e?s=80&amp;d=http%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n"><a href="http://devblog.timur.hu/" onclick="javascript:_gaq.push(['_trackEvent','outbound-commentauthor','http://devblog.timur.hu']);"  rel='external nofollow' class='url url'>Timur Kristóf</a></span></div>
+    		<div class="comment-meta">Posted July 28, 2012 at 9:31 am <span class="meta-sep">|</span> <a href="#comment-296" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>Very nice article, it explains a lot of unanswered questions for me. <img src='http://www.kdab.com/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=296#respond' onclick='return addComment.moveForm("comment-296", "296", "respond", "2427")'>Reply</a></div>			</li>
+    	<li id="comment-305" class="comment c3 c-y2012 c-m08 c-d11 c-h14 depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://0.gravatar.com/avatar/e23a4ba9ba863f2870f6a939b892b656?s=80&amp;d=http%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n">charley</span></div>
+    		<div class="comment-meta">Posted August 11, 2012 at 1:24 pm <span class="meta-sep">|</span> <a href="#comment-305" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>Good info, nice details, well-written.  Keep these coming! High value here!</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=305#respond' onclick='return addComment.moveForm("comment-305", "305", "respond", "2427")'>Reply</a></div>			</li>
+    	<li id="comment-337" class="comment c4 c-y2012 c-m09 c-d13 c-h10 alt depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://1.gravatar.com/avatar/10b4ae517f6332a96d5c5cd218958201?s=80&amp;d=http%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n">Laszlo Papp</span></div>
+    		<div class="comment-meta">Posted September 13, 2012 at 9:29 am <span class="meta-sep">|</span> <a href="#comment-337" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>I have two minor questions:</p>
+<p>1) What does the &#8220;VME&#8221; abbreviate in the class name &#8220;QQmlVME&#8221;?<br />
+2) Can you describe in few words (perhaps give an example) what the visitor does during the low to high-level transformation?</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=337#respond' onclick='return addComment.moveForm("comment-337", "337", "respond", "2427")'>Reply</a></div>			<ul class='children'>
+    	<li id="comment-338" class="comment c5 byuser comment-author-thomas bypostauthor c-y2012 c-m09 c-d13 c-h11 depth-2">
+    		    		<div class="comment-author vcard"><img alt='' src='http://0.gravatar.com/avatar/4dd768e3c2872cd5eab46815a702c005?s=80&amp;d=http%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n"><a href="http://www.kdab.com"   rel='external nofollow' class='url url'>Thomas McGuire</a></span></div>
+    		<div class="comment-meta">Posted September 13, 2012 at 10:04 am <span class="meta-sep">|</span> <a href="#comment-338" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>1) I don&#8217;t know actually&#8230; I suspect something like Virtual Machine Environment</p>
+<p>2) The visitor basically iterates over all nodes in the AST and creates QQmlScript::Objects, Properties and Values for the nodes. The tree of Objects, Properties and Values is the high level structure.<br />
+For example when the an UiObjectDefinition node is encountered, the visitor creates an Object for that, then processes all child AST nodes of the object. These child AST nodes might for example be property definitions, which would then be added as a Property to the parent Object.<br />
+I suggest to step over the code in a debugger to see how it works in detail.</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=338#respond' onclick='return addComment.moveForm("comment-338", "338", "respond", "2427")'>Reply</a></div>			</li>
+</ul>
+</li>
+    	<li id="comment-339" class="comment c6 c-y2012 c-m09 c-d13 c-h16 alt depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://0.gravatar.com/avatar/46fa073a74a8b6401ad5c7b438330e52?s=80&amp;d=http%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n"><a href="http://jimi.mx" onclick="javascript:_gaq.push(['_trackEvent','outbound-commentauthor','http://jimi.mx']);"  rel='external nofollow' class='url url'>Raul Guerrero</a></span></div>
+    		<div class="comment-meta">Posted September 13, 2012 at 3:14 pm <span class="meta-sep">|</span> <a href="#comment-339" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>Hi,</p>
+<p>Does anyone know anything about precompiling QML into bytecode so to protect your QML code to be read or decompiled from a QRC file?<br />
+Check <a href="http://qt-project.org/forums/viewthread/20162/" onclick="javascript:_gaq.push(['_trackEvent','outbound-comment','http://qt-project.org']);" title="this post" rel="nofollow"></a></p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=339#respond' onclick='return addComment.moveForm("comment-339", "339", "respond", "2427")'>Reply</a></div>			<ul class='children'>
+    	<li id="comment-340" class="comment c7 byuser comment-author-thomas bypostauthor c-y2012 c-m09 c-d13 c-h16 depth-2">
+    		    		<div class="comment-author vcard"><img alt='' src='http://0.gravatar.com/avatar/4dd768e3c2872cd5eab46815a702c005?s=80&amp;d=http%3A%2F%2F0.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n"><a href="http://www.kdab.com"   rel='external nofollow' class='url url'>Thomas McGuire</a></span></div>
+    		<div class="comment-meta">Posted September 13, 2012 at 3:22 pm <span class="meta-sep">|</span> <a href="#comment-340" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>QML has no support for precompiling. It sure would be nice, would remove the &#8216;compiling&#8217; phase from startup.</p>
+<p>There was some talk about this feature, can&#8217;t remember where I read about that. The conclusion was that while it is technically a good idea and apparently not too hard to implement, just no one had time to add this feature yet.</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=340#respond' onclick='return addComment.moveForm("comment-340", "340", "respond", "2427")'>Reply</a></div>			</li>
+</ul>
+</li>
+    	<li id="comment-351" class="comment c8 c-y2012 c-m09 c-d28 c-h13 alt depth-1">
+    		    		<div class="comment-author vcard"><img alt='' src='http://1.gravatar.com/avatar/93f8677e5a7596260c3871e28b0d89af?s=80&amp;d=http%3A%2F%2F1.gravatar.com%2Favatar%2Fad516503a11cd5ca435acc9bb6523536%3Fs%3D80&amp;r=G' class='photo avatar avatar-80 photo' height='80' width='80' /> <span class="fn n"><a href="http://milosolutions.com" onclick="javascript:_gaq.push(['_trackEvent','outbound-commentauthor','http://milosolutions.com']);"  rel='external nofollow' class='url url'>Kacper Gazda</a></span></div>
+    		<div class="comment-meta">Posted September 28, 2012 at 12:44 pm <span class="meta-sep">|</span> <a href="#comment-351" title="Permalink to this comment">Permalink</a></div>
+                <div class="comment-content">
+        		<p>Pretty interesting and a nice article.</p>
+    		</div>
+			<div class="comment-reply-link"><a class='comment-reply-link' href='/qml-engine-internals-part-1-qml-file-loading/?replytocom=351#respond' onclick='return addComment.moveForm("comment-351", "351", "respond", "2427")'>Reply</a></div>			</li>
+					</ol>
+
+        			<div id="comments-nav-below" class="comment-navigation">
+        			     <div class="paginated-comments-links"></div>
+                    </div>
+					
+				</div><!-- #comments-list .comments -->
+
+			
+
+
+
+
+				<div id="trackbacks-list" class="comments">
+					<h3><span>One</span> Trackback</h3>
+					
+					<ol>
+    		<li id="comment-316" class="pingback t9 c-y2012 c-m08 c-d17 c-h16 depth-1">
+    			<div class="comment-author">By <a href="http://www.kdab.com/new-blog-series-qml-engine-internals/"   rel='external nofollow' class='url'>KDAB - New blog series: QML Engine Internals</a> on August 17, 2012 at 3:12 pm</div>
+                <div class="comment-content">
+    			<p>[...] QML file is loaded, the QML engine somehow creates one C++ object for all elements in the file. Thefirst blog post examined how the QML engine goes from reading a text file to having a complete tree of C++ objects. [...]</p>
+			</div>
+</li>
+					</ol>				
+					
+				</div><!-- #trackbacks-list .comments -->			
+
+				
+
+
+								<div id="respond">
+				<h3 id="reply-title">Post a Comment <small><a rel="nofollow" id="cancel-comment-reply-link" href="/qml-engine-internals-part-1-qml-file-loading/#respond" style="display:none;">Cancel reply</a></small></h3>
+									<form action="http://www.kdab.com/wp-comments-post.php" method="post" id="commentform">
+																			<p class="comment-notes">Your email is <em>never</em> published nor shared. Required fields are marked <span class="required">*</span></p>							<div id="form-section-author" class="form-section"><div class="form-label"><label for="author">Name</label> <span class="required">*</span></div><div class="form-input"><input id="author" name="author" type="text" value="" size="30" maxlength="20" tabindex="3" aria-required='true' /></div></div><!-- #form-section-author .form-section -->
+<div id="form-section-email" class="form-section"><div class="form-label"><label for="email">Email</label> <span class="required">*</span></div><div class="form-input"><input id="email" name="email" type="text" value="" size="30" maxlength="50" tabindex="4" aria-required='true' /></div></div><!-- #form-section-email .form-section -->
+<div id="form-section-url" class="form-section"><div class="form-label"><label for="url">Website</label></div><div class="form-input"><input id="url" name="url" type="text" value="" size="30" maxlength="50" tabindex="5" /></div></div><!-- #form-section-url .form-section -->
+<p class="cptch_block"><br />	<input type="hidden" name="cptch_result" value="oNs=" /><input type="hidden" value="Version: 2.4" />
+	four &times; <input type="text" autocomplete="off" name="cptch_number" value="" maxlength="2" size="2" style="width:20px;margin-bottom:0;display:inline;font-size: 12px;width: 30px;" /> = 20</p>												<div id="form-section-comment" class="form-section"><div class="form-label"><label for="comment">Comment</label></div><div class="form-textarea"><textarea id="comment" name="comment" cols="45" rows="8" tabindex="6" aria-required="true"></textarea></div></div><!-- #form-section-comment .form-section -->						<div id="form-allowed-tags" class="form-section"><p><span>You may use these <abbr title="HyperText Markup Language">HTML</abbr> tags and attributes:</span> <code>&lt;a href=&quot;&quot; title=&quot;&quot;&gt; &lt;abbr title=&quot;&quot;&gt; &lt;acronym title=&quot;&quot;&gt; &lt;b&gt; &lt;blockquote cite=&quot;&quot;&gt; &lt;cite&gt; &lt;code&gt; &lt;del datetime=&quot;&quot;&gt; &lt;em&gt; &lt;i&gt; &lt;q cite=&quot;&quot;&gt; &lt;strike&gt; &lt;strong&gt; </code></p></div>						<p class="form-submit">
+							<input name="submit" type="submit" id="submit" value="Post Comment" />
+							<input type='hidden' name='comment_post_ID' value='2427' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+						</p>
+											</form>
+							</div><!-- #respond -->
+				<script type="text/javascript">
+		jQuery(document).ready(function () {
+			jQuery('#commentform').submit(function () {
+				_gaq.push(
+					['_setAccount', 'UA-23668815-1'],
+					['_trackEvent', 'comment', 'submit']
+				);
+			});
+		});
+	</script>
+				
+			</div><!-- #comments -->
+		
+			</div><!-- #content -->
+			
+			 
+			
+		</div><!-- #container -->
+		
+
+<div id="primary" class="aside main-aside">
+	<ul class="xoxo">
+<li id="author_image-2" class="widgetcontainer author_image"><div class="entry_author_image"><img src="http://www.kdab.com/wp-content/authors/thomas-4.jpg" alt="" /></div>
+
+</li>
+	</ul>
+</div><!-- #primary .aside -->
+
+<div id="secondary" class="aside main-aside">
+	<ul class="xoxo">
+<li id="text-10" class="widgetcontainer widget_text"><h3 class="widgettitle">RSS</h3>
+			<div class="textwidget"><a href="http://feeds.feedburner.com/KdabBlogs?format=xml" onclick="javascript:_gaq.push(['_trackEvent','outbound-widget','http://feeds.feedburner.com']);" title="Subscribe to KDAB Blogs" rel="alternate" type="application/rss+xml" ><img src="http://www.feedburner.com/fb/images/pub/feed-icon32x32.png" alt="" style="border:0;display:block;margin: 0 auto"/></a></div>
+		</li>
+	</ul>
+</div><!-- #secondary .aside -->
+
+    </div><!-- #main -->
+    
+    <div id="footer-images">
+<div id="footer-above">
+<p style="text-align: right; margin-bottom: 0px;"><img src="/wp-content/uploads/stories/kde-supporter_small.png" alt="KDE Patron" title="KDE Patron" style="border: 0px none; margin-bottom: 0px; vertical-align: middle;" height="24" width="91" /><img src="/wp-content/uploads/stories/qt_certifiedpartner_128_2.jpg" alt="Qt Partner" title="Qt Partner" style="border: 0px none; margin-bottom: 0px; vertical-align: middle;" height="58" width="128" /></p>
+</div>
+</div>
+<!-- our welcome blurb ends here -->
+    
+
+	<div id="footer">
+    
+            
+        <div id="siteinfo">        
+
+    	<p>Head Office, Hagfors, Sweden: Klarälvdalens Datakonsult AB <br />   
+E-mail: <a href="mailto:info@kdab.com">info@kdab.com</a> Phone: +46 (0)563 540090</p>    
+		</div><!-- #siteinfo -->
+    
+    	        
+	</div><!-- #footer -->
+	
+    </div><!-- #wrapper .hfeed -->  
+
+
+<!--[if IE]>
+<script language=javascript>
+//<![CDATA[
+	if (screen_res=="") {
+		screen_res = screen.width + " x " + screen.height;
+	}
+	if (screen_res!=" x ") {
+		var cdate = new Date();
+		cdate.setTime(cdate.getTime()+(48*60*60*1000));
+		var cexpires = cdate.toGMTString();
+		//var the_cookie = "wassup_screen_res="+escape(screen_res)+"; expires="+cexpires;
+		document.cookie = "wassup_screen_res=" + escape(screen_res)+ "; path=/; domain=" + document.domain;
+
+	}
+//]]>
+</script>
+<![endif]--><!--
+<p class="small"> WassUp 1.8.3.1 timestamp: 2013-03-13 02:41:17PM UTC (03:41PM)<br />
+If above timestamp is not current time, this page is cached.</p> -->
+	<div style="display:none">
+	<div class="grofile-hash-map-d593ecff710fdbe6dcaa6cebc2453610">
+	</div>
+	<div class="grofile-hash-map-10b4ae517f6332a96d5c5cd218958201">
+	</div>
+	<div class="grofile-hash-map-048033a846886d7db5758a07eb209f4e">
+	</div>
+	<div class="grofile-hash-map-e23a4ba9ba863f2870f6a939b892b656">
+	</div>
+	<div class="grofile-hash-map-4dd768e3c2872cd5eab46815a702c005">
+	</div>
+	<div class="grofile-hash-map-46fa073a74a8b6401ad5c7b438330e52">
+	</div>
+	<div class="grofile-hash-map-93f8677e5a7596260c3871e28b0d89af">
+	</div>
+	</div>
+<script type='text/javascript' src='http://www.kdab.com/wp-content/plugins/jetpack/modules/sharedaddy/sharing.js?ver=20121205'></script>
+		<script type="text/javascript" charset="utf-8">
+		jQuery(document).on( 'ready post-load', function(){
+			jQuery( 'a.share-facebook' ).on( 'click', function() {
+				window.open( jQuery(this).attr( 'href' ), 'wpcomfacebook', 'menubar=1,resizable=1,width=600,height=400' );
+				return false;
+			});
+		});
+		</script>
+				<script type="text/javascript" charset="utf-8">
+		jQuery(document).on( 'ready post-load', function(){
+			jQuery( 'a.share-twitter' ).on( 'click', function() {
+				window.open( jQuery(this).attr( 'href' ), 'wpcomtwitter', 'menubar=1,resizable=1,width=600,height=350' );
+				return false;
+			});
+		});
+		</script>
+		<script type='text/javascript'>
+/* <![CDATA[ */
+var SlimStatParams = {"ajaxurl":"https:\/\/www.kdab.com\/wp-admin\/admin-ajax.php","ci":"YTo0OntzOjEyOiJjb250ZW50X3R5cGUiO3M6NDoicG9zdCI7czo4OiJjYXRlZ29yeSI7czo4OiI2MSw3Miw3MyI7czoxMDoiY29udGVudF9pZCI7aToyNDI3O3M6NjoiYXV0aG9yIjtzOjY6InRob21hcyI7fQ==","nonce":"60fbc59a62370996596084fce2717d5e"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://www.kdab.com/wp-content/plugins/wp-slimstat/wp-slimstat.js?ver=2.9.3'></script>
+<script type='text/javascript' src='http://s0.wp.com/wp-content/js/devicepx-jetpack.js?ver=201311'></script>
+
+	<script src="http://stats.wordpress.com/e-201311.js" type="text/javascript"></script>
+	<script type="text/javascript">
+	st_go({v:'ext',j:'1:2.1.2',blog:'32184545',post:'2427',tz:'1'});
+	var load_cmc = function(){linktracker_init(32184545,2427,2);};
+	if ( typeof addLoadEvent != 'undefined' ) addLoadEvent(load_cmc);
+	else load_cmc();
+	</script>
+</body>
+</html>
+<!-- Performance optimized by W3 Total Cache. Learn more: http://www.w3-edge.com/wordpress-plugins/
+
+Page Caching using disk: enhanced
+Database Caching 26/76 queries in 0.053 seconds using disk: basic
+Object Caching 1956/2140 objects using disk: basic
+
+ Served from: www.kdab.com @ 2013-03-13 15:41:17 by W3 Total Cache -->
