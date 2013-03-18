@@ -6,7 +6,8 @@ import Ubuntu.Components 0.1
            First Tab has a single Label and
            second Tab has a single ToolbarAction.
 */
-
+LoginForm {}
+/*
 MainView {
     // objectName for functional testing purposes (autopilot-qt5)
     objectName: "mainView"
@@ -88,3 +89,4 @@ MainView {
         }
     }
 }
+*/

@@ -2,6 +2,6 @@
 Name=uqq
 Comment=My project description
 Exec=/usr/bin/qmlscene
-Icon=qmlscene
+Icon=logo.png
 Terminal=false
 Type=Application
