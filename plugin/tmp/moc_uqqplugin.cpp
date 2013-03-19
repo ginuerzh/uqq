@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'uqqplugin.h'
 **
-** Created: Sun Mar 17 16:25:09 2013
+** Created: Mon Mar 18 16:40:38 2013
 **      by: The Qt Meta Object Compiler version 67 (Qt 5.0.0)
 **
 ** WARNING! All changes made in this file will be lost!

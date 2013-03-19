@@ -1,6 +1,6 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
-import UQQ 1.0
+import UQQ 1.0 as QQ
 import "md5.js" as MD5
 
 Item {
@@ -22,7 +22,7 @@ Item {
             clip: true
 
             color: "red"
-            text: " "
+            text: QQ.Client.errCode ? QQ.Client.getInfo("errMsg") : " "
         }
 
         FormInput {
@@ -33,9 +33,8 @@ Item {
             KeyNavigation.tab: password
             focus: true
             onFocusChanged: {
-                if (!focus && text.length > 0 && text != loginData.uin) {
-                    loginData.uin = text;
-                    checkVC(loginData);
+                if (!focus && text.length > 0) {
+                    QQ.Client.checkCode(text);
                 }
             }
             //validator: RegExpValidator { regExp: /\d{5,}/ }
@@ -52,7 +51,7 @@ Item {
             id: captcha
 
             label: i18n.tr("验证码:")
-            visible: false
+            visible: QQ.Client.captcha ? true : false
 
             KeyNavigation.tab: username
             KeyNavigation.backtab: password
@@ -66,7 +65,8 @@ Item {
                 id: captchaImg
                 anchors.left: parent.left
                 height: loginButton.height
-                visible: false
+                visible: QQ.Client.captcha ? true : false
+                source: QQ.Client.captcha ? "captcha.jpg" : ""
             }
             Button {
                 id: loginButton
@@ -74,61 +74,8 @@ Item {
                 text: i18n.tr("登录")
 
                 onClicked: {
-                    loginData.password = password.text;
-                    if (captcha.visible)
-                        loginData.vc = captcha.text;
-
-                    login(loginData);
+                    login(username.text, password.text, captcha.text);
                 }
-            }
-        }
-    }
-
-    QtObject {
-        id: loginData
-
-        property string uin
-        property string password
-        property string vc
-        property string uinBytes
-        property string appid: "1003903"
-        readonly property var status: ({
-            online: "online",   // 在线
-            callme: "callme",   // Q我吧
-            away:   "away",     // 离开
-            busy:   "busy",     // 忙碌
-            slient: "silent",   // 请勿打扰
-            hidden: "hidden",   // 隐身
-            offline:"offine"    // 离线
-        })
-
-        property string vfwebqq
-        property string psessionid
-
-        onVfwebqqChanged: getFirends(vfwebqq);
-    }
-
-    HttpClient {
-        id: loginClient
-    }
-
-    JSONListModel {
-        id: loginModel
-        query: "$"
-        onJsonChanged: {
-            if (count > 0) {
-                var retcode = model.get(0).retcode;
-                if (retcode !== 0) {
-                    console.debug("login failed, retcode=" + retcode);
-                } else {
-                    var result = model.get(0).result;
-                    loginData.vfwebqq = result.vfwebqq;
-                    loginData.psessionid = result.psessionid;
-                    console.log("vfwebqq:" + loginData.vfwebqq);
-                    console.log("psessionid:" + loginData.psessionid);
-                }
-            } else {
-                console.log("no data");
             }
         }
     }
@@ -146,34 +93,27 @@ Item {
         loginClient.textFinished.connect(onLoginCheck);
     }
 
-    function geCaptcha(data) {
+    function geCaptcha() {
         var url = "http://captcha.qq.com/getimage?" +
-                "uin=" + data.uin +
-                "&vc_type=" + data.vc +
-                "&aid=" + data.appid +
+                "uin=" + QQ.Client.getInfo("uin") +
+                "&vc_type=" + QQ.Client.getInfo("vc") +
+                "&aid=" + QQ.Client.getInfo("aid") +
                 "&r=" + Math.random();
 
         captchaImg.source = url;
     }
 
-    function login(data) {
-        var url = "http://ptlogin2.qq.com/login?" +
-                "u=" + data.uin +
-                "&p=" + pwdMd5(data) +
-                "&verifycode=" + data.vc +
-                "&aid=" + data.appid +
-                "&webqq_type=10&remember_uin=0&login2qq=1&u1=http%3A%2F%2Fweb.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=2-6-22950&mibao_css=m_webqq&t=1&g=1"
+    function login(uin, password, vc) {
+        var pwdMd5;
 
-        loginClient.open(HttpClient.Get, url);
-        loginClient.setHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
-        loginClient.textFinished.connect(onLoginCheck);
-        loginClient.send();
+        if (vc.length === 0) {
+            vc = QQ.Client.getInfo("vc");
+        }
+        //console.log(uinHex + ", " + password + ", " + vc);
+        eval("var uinHex = '" + QQ.Client.getInfo("uinHex") + "'");
+        pwdMd5 = MD5.pwdMd5(uinHex, password, vc);
+        QQ.Client.login(uin, pwdMd5, vc);
     }
-    function onLoginCheck(text) {
-        loginClient.textFinished.disconnect(onLoginCheck);
-        eval(text);
-    }
-
     // 1279450562
     function secondLogin() {
         var url = "http://d.web2.qq.com/channel/login2";
@@ -210,19 +150,6 @@ Item {
     }
     function onGetFirends(text) {
         console.log(text);
-    }
-
-    function pwdMd5(data) {
-        // though QML has the Qt.md5 function,
-        // but the result it calculated doesn't match this.
-        // so we need ourself md5 algorithm
-        // thanks 'http://www.qicq5.com/' forum for this algorithm.
-
-        var I = MD5.hexchar2bin(MD5.md5(data.password));
-        var H = MD5.md5(I + data.uinBytes);
-        var G = MD5.md5(H + data.vc.toUpperCase());
-        //console.log(G);
-        return G;
     }
 
     function ptui_checkVC(status, vc, uin) {

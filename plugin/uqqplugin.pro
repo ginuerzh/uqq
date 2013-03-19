@@ -3,15 +3,18 @@ CONFIG += qt plugin
 QT += qml
 
 DESTDIR = UQQ
-TARGET = uqqplugin
+TARGET = uqq
 
 OBJECTS_DIR = tmp
 MOC_DIR = tmp
 
 
-SOURCES += httpclient.cpp \
+SOURCES += uqqclient.cpp \
            uqqplugin.cpp
 
-HEADERS += httpclient.h \
+HEADERS += uqqclient.h \
            uqqplugin.h
+
+OTHER_FILES += \
+    json.txt
 

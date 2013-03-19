@@ -1,12 +1,15 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
+import UQQ 1.0 as QQ
 
 /*!
     \brief MainView with Tabs element.
            First Tab has a single Label and
            second Tab has a single ToolbarAction.
 */
+
 LoginForm {}
+
 /*
 MainView {
     // objectName for functional testing purposes (autopilot-qt5)

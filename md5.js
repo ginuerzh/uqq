@@ -1,5 +1,18 @@
 .pragma library
 
+function pwdMd5(uinHex, password, vc) {
+    // though QML has the Qt.md5 function,
+    // but the result it calculated doesn't match this.
+    // so we need ourself md5 algorithm
+    // thanks 'http://www.qicq5.com/' forum for this algorithm.
+
+    var I = hexchar2bin(md5(password));
+    var H = md5(I + uinHex);
+    var G = md5(H + vc.toUpperCase());
+    //console.log(G);
+    return G;
+}
+
 function hexchar2bin(str) {
     var arr = [];
     for (var i = 0; i < str.length; i = i + 2) {
