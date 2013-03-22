@@ -8,6 +8,15 @@ Item {
     width: units.gu(45)
     height: units.gu(80)
 
+    Component.onCompleted: {
+        QQ.Client.captchaChanged.connect(onCaptchaChanged);
+        QQ.Client.errorChanged.connect(onErrorChanged);
+        QQ.Client.loginSuccess.connect(onLoginSuccess);
+    }
+
+    Component.onDestruction: {
+    }
+
     Column {
         anchors.centerIn: parent
         spacing: units.gu(1)
@@ -22,7 +31,7 @@ Item {
             clip: true
 
             color: "red"
-            text: QQ.Client.errCode ? QQ.Client.getInfo("errMsg") : " "
+            //text: QQ.Client.errCode ? QQ.Client.getLoginInfo("errMsg") : " "
         }
 
         FormInput {
@@ -51,8 +60,7 @@ Item {
             id: captcha
 
             label: i18n.tr("验证码:")
-            visible: QQ.Client.captcha ? true : false
-
+            visible: false
             KeyNavigation.tab: username
             KeyNavigation.backtab: password
         }
@@ -60,13 +68,14 @@ Item {
         Rectangle {
             width: parent.width
             height: childrenRect.height
+            color: "transparent"
 
             Image {
                 id: captchaImg
                 anchors.left: parent.left
                 height: loginButton.height
-                visible: QQ.Client.captcha ? true : false
-                source: QQ.Client.captcha ? "captcha.jpg" : ""
+                visible: false
+                cache: false
             }
             Button {
                 id: loginButton
@@ -80,101 +89,49 @@ Item {
         }
     }
 
-    // check whether captcha is needed
-    function checkVC(data) {
-        var url = "http://check.ptlogin2.qq.com/check?" +
-                "uin=" + data.uin +
-                "&appid=" + data.appid +
-                "&r=" + Math.random();
-
-        loginClient.open(HttpClient.Get, url);
-        loginClient.setHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
-        loginClient.send();
-        loginClient.textFinished.connect(onLoginCheck);
+    function onCaptchaChanged(needed) {
+        captchaImg.source = "";
+        captcha.text = "";
+        if (needed) {
+            captcha.visible = true;
+            captchaImg.visible = true;
+            captchaImg.source = "captcha.jpg";
+        } else {
+            captcha.visible = false;
+            captchaImg.visible = false;
+        }
     }
 
-    function geCaptcha() {
-        var url = "http://captcha.qq.com/getimage?" +
-                "uin=" + QQ.Client.getInfo("uin") +
-                "&vc_type=" + QQ.Client.getInfo("vc") +
-                "&aid=" + QQ.Client.getInfo("aid") +
-                "&r=" + Math.random();
+    function onErrorChanged(errCode) {
+        if (errCode === 0) {
+            errMsg.text = " ";
+        } else {
+            errMsg.text = QQ.Client.getLoginInfo("errMsg");
+        }
+    }
 
-        captchaImg.source = url;
+    function onLoginSuccess() {
+        loader.source = "MainPage.qml";
     }
 
     function login(uin, password, vc) {
         var pwdMd5;
 
-        if (vc.length === 0) {
-            vc = QQ.Client.getInfo("vc");
+        if (uin.length === 0 || password.length === 0) {
+            errMsg.text = i18n.tr("请正确输入QQ帐号和密码!");
+            return;
         }
-        //console.log(uinHex + ", " + password + ", " + vc);
-        eval("var uinHex = '" + QQ.Client.getInfo("uinHex") + "'");
+        if (captcha.visible && vc.length < 4) {
+            errMsg.text = i18n.tr("请正确输入验证码!");
+            return;
+        }
+
+        if (!captcha.visible) {
+            vc = QQ.Client.getLoginInfo("vc");
+        }
+        eval("var uinHex = '" + QQ.Client.getLoginInfo("uinHex") + "'");
+        //console.log("qmllogin: " + QQ.Client.getLoginInfo("uinHex") + ", " + password + ", " + vc);
         pwdMd5 = MD5.pwdMd5(uinHex, password, vc);
         QQ.Client.login(uin, pwdMd5, vc);
-    }
-    // 1279450562
-    function secondLogin() {
-        var url = "http://d.web2.qq.com/channel/login2";
-
-        var data = "r={" +
-                "\"status\":\"" + loginData.status.hidden + "\"" +
-                ",\"ptwebqq\":\"" + loginClient.getCookie("ptwebqq", url) + "\"" +
-                ",\"passwd_sig\":\"\"" +
-                ",\"clientid\":\"25499193\"" +
-                ",\"psessionid\":null}&clientid=25499193&psessionid=null";
-
-        loginClient.open(HttpClient.Post, url);
-        loginClient.setHeader("Content-Type", "application/x-www-form-urlencoded");
-        loginClient.setHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
-        loginClient.textFinished.connect(onSecondLogin);
-        loginClient.send(loginClient.toPercentEncoding(data, "=", null));
-    }
-    function onSecondLogin(text) {
-        //console.log(text)
-        loginClient.textFinished.disconnect(onSecondLogin);
-        loginModel.json = text;
-    }
-
-    function getFirends(vfwebqq) {
-        var url = "http://s.web2.qq.com/api/get_user_friends2";
-        var data = "r={\"h\":\"hello\"" +
-                    ",\"vfwebqq\":\"" + vfwebqq + "\"}"
-
-        loginClient.open(HttpClient.Post, url);
-        loginClient.setHeader("Content-Type", "application/x-www-form-urlencoded");
-        loginClient.setHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=2");
-        loginClient.textFinished.connect(onGetFirends);
-        loginClient.send(loginClient.toPercentEncoding(data, "=", null));
-    }
-    function onGetFirends(text) {
-        console.log(text);
-    }
-
-    function ptui_checkVC(status, vc, uin) {
-        //console.log("ptui_checkVC(" + status + ", " + vc + ", " + uin + ")");
-
-        loginData.vc = vc;
-        loginData.uinBytes = uin;
-        if (parseInt(status) !== 0 && vc.length > 0) {
-            captchaImg.visible = true;
-            captcha.visible = true;
-            geCaptcha(loginData);
-        } else {
-            captchaImg.visible = false;
-            captcha.visible = false;
-        }
-    }
-
-    function ptuiCB(status,code, url, code2, text, name) {
-        //console.log("ptuiCB(" + status + ", " + code + ", " +
-        //            url + ", " + code2 + ", " + text + ", " + name + ")");
-        if (parseInt(status) === 0) {
-            errMsg.text = " ";
-            secondLogin();
-        } else {
-            errMsg.text = text;
-        }
     }
 }

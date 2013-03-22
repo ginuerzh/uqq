@@ -92,7 +92,7 @@ Item {
             Label { text: i18n.tr("个人主页: ") + "homepage.com" }
             Label { text: i18n.tr("个人说明: ") + "......" }
         }
-
+/*
         TextArea {
             id: msgArea
             width: contents.width
@@ -126,7 +126,9 @@ Item {
                 text: i18n.tr("发送")
                 onClicked: console.log("Send Message")
             }
+
         }
+*/
     }
 
     states: [

@@ -10,6 +10,8 @@ Item {
     width: ListView.view.width
     height: titleBar.height
 
+    Component.onCompleted: console.log("width:" + width + ", height:" + height)
+
     ListItem.Standard {
         id: titleBar
         text: name + " [" + online + "/" + total + "]"
@@ -25,7 +27,7 @@ Item {
         }
 
         onClicked: {
-            //console.log("clicked, " + parent.height + ", " + groupDelegate.height)
+            console.log("clicked, " + parent.height + ", " + groupDelegate.height)
             groupDelegate.ListView.view.currentIndex = index
             if (groupDelegate.state == "") {
                 groupDelegate.state = "EXPANDING"
@@ -33,7 +35,7 @@ Item {
                 groupDelegate.state = ""
         }
     }
-
+/*
     ContactList {
         id: contactList
         anchors {
@@ -45,7 +47,7 @@ Item {
         clip: true
         opacity: 0
     }
-
+*/
     states: State {
         name: "EXPANDING"
 
@@ -67,8 +69,8 @@ Item {
             rotation: 90
         }
         PropertyChanges {
-            target: contactList
-            opacity: 1
+            //target: contactList
+            //opacity: 1
         }
     }
     transitions: Transition {

@@ -6,6 +6,11 @@ function pwdMd5(uinHex, password, vc) {
     // so we need ourself md5 algorithm
     // thanks 'http://www.qicq5.com/' forum for this algorithm.
 
+    if (uinHex.length === 0 || password.length === 0 || vc.length === 0) {
+        console.log("pwdMd5 error");
+        return;
+    }
+
     var I = hexchar2bin(md5(password));
     var H = md5(I + uinHex);
     var G = md5(H + vc.toUpperCase());
