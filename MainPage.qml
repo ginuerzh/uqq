@@ -16,7 +16,7 @@ MainView {
             objectName: "mainPage"
             title: i18n.tr("QQ")
             page: HomePage { anchors.fill: parent
-                anchors.topMargin: units.gu(10)
+                anchors.topMargin: units.gu(9.5)
             }
         }
 
@@ -29,8 +29,7 @@ MainView {
             // Tab content begins here
             page: Contact {
                 anchors.fill: parent
-                //model: contactModel
-                anchors.topMargin: units.gu(10)
+                anchors.topMargin: units.gu(9.5)
             }
 
             ListModel {

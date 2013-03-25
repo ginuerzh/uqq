@@ -47,9 +47,15 @@ public:
     Q_INVOKABLE void login(QString uin, QString pwd, QString vc);
     Q_INVOKABLE void loadUserInfo();
     Q_INVOKABLE void loadContact();
-    Q_INVOKABLE QString getFriendsInCategory(int index);
+    Q_INVOKABLE QList<QObject *> getCategories();
+    Q_INVOKABLE QList<QObject *> getCategoryMembers(int category);
+    Q_INVOKABLE void loadInfoInCategory(int category);
 
 private:
+    void initConfig();
+    QVariant getConfig(const QString &key) const;
+    void addConfig(const QString &key, const QVariant &value);
+
     void verifyCode(const QString &data);
     void getCaptcha();
     void saveCaptcha(const QByteArray &data);
@@ -57,20 +63,19 @@ private:
     void secondLogin();
     void verifySecondLogin(const QByteArray &data);
 
-    void getLongNick();
-    void parseLongNick(const QByteArray &data);
+    void getLongNick(const QString &uin);
+    void parseLongNick(const QString &uin, const QByteArray &data);
     void getUserLevel();
     void parseUserLevel(const QByteArray &data);
     void getUserDetail();
     void parseUserDetail(const QByteArray &data);
     void getUserFace();
-    void saveUserFace(const QByteArray &data);
+    void getMemberFace(QString uin);
+    void getFace(const QString &uin, int cache = 0, int type = 1);
+    void saveFace(const QString &uin, const QByteArray &data);
     void parseContact(const QByteArray &data);
     void getOnlineBuddies();
     void parseOnlineBuddies(const QByteArray &data);
-
-    QVariant getConfig(const QString &key) const;
-    void addConfig(const QString &key, const QVariant &value);
 
     int parseParamList(const QString &data, QStringList &paramList);
     QString getCookie(const QString &name, QUrl url) const;
@@ -86,11 +91,7 @@ signals:
     void errorChanged(int errCode);
     void captchaChanged(bool needed);
     void loginSuccess();
-    void userFaceChanged(QString face);
-    void longNickChanged(QString json);
-    void userLevelChanged(QString json);
-    void userDetailChanged(QString json);
-    void categoryReady(QString json);
+    void categoryReady();
 
 public slots:
     void onFinished(QNetworkReply *reply);

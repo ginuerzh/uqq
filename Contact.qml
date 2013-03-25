@@ -4,133 +4,72 @@ import Ubuntu.Components.ListItems 0.1 as ListItem
 import UQQ 1.0 as QQ
 
 Item {
-    id: friend
+    id: contact
 
     Component.onCompleted: {
         QQ.Client.categoryReady.connect(onCategoryReady);
         QQ.Client.loadContact();
     }
 
-    JSONListModel {
-        id: categoryModel
-        onJsonChanged: {
-            //console.log("categories:" + count);
-            if (count > 0) {
-                groupView.model = model;
-            }
-        }
-    }
-
-    Column {
+    Flickable {
+        id: flick
         anchors.fill: parent
+        contentHeight: wrapper.height
 
-        ListView {
-            id: groupView
+        Column {
+            id: wrapper
             width: parent.width
-            height: parent.height
-            delegate: list
-            clip: true
-        }
-    }
 
-    function onCategoryReady(json) {
-        categoryModel.json = json;
-        //console.log(json);
-    }
+            Repeater {
+                id: categories
 
-    Component {
-        id: list
-        Item {
-            id: listView
-            width: ListView.view.width
-            height: titleBar.height
+                Category {
+                    id: category
+                    width: parent.width
 
-            //Component.onCompleted: console.log("width:" + width + ", height:" + height)
+                    onClicked: {
+                        if (!category.loaded) {
+                            //console.log("load friends in category " + index);
+                            category.loaded = true;
+                            category.model = QQ.Client.getCategoryMembers(index);
+                            QQ.Client.loadInfoInCategory(index);
+                        }
+                        if (category.state == "" && category.model.length > 0) {
+                            category.state = "Expand"
+                        } else {
+                            category.state = ""
+                        }
+                    }
+                    states: State {
+                        name: "Expand"
 
-            ListItem.Standard {
-                id: titleBar
-                text: name + " [" + online + "/" + total + "]"
-                clip: true
+                        PropertyChanges {
+                            target: category
+                            height: contact.height
+                        }
+                        PropertyChanges {
+                            target: flick
+                            interactive: false
+                        }
+                        PropertyChanges {
+                            target: flick
+                            explicit: true
+                            contentY: category.y
+                        }
+                        PropertyChanges {
+                            target: category
+                            rotation: 90
+                        }
+                    }
 
-                Image {
-                    id: progressionArrow
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.rightMargin: units.gu(2)
-
-                    source: Qt.resolvedUrl("arrow.png")
-                }
-
-                onClicked: {
-                    listView.ListView.view.currentIndex = index
-                    if (listView.state == "") {
-                        friendModel.json = QQ.Client.getFriendsInCategory(index);
-                        listView.state = "Expand"
-                    } else {
-                        listView.state = ""
-                        friendModel.json = ""
+                    transitions: Transition {
+                        NumberAnimation { properties: "height,contentY,rotation,opacity" }
                     }
                 }
             }
-
-            ListView {
-                id: friendView
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: titleBar.bottom
-                    bottom: parent.bottom
-                }
-                delegate: friendDelegate
-            }
-
-            JSONListModel {
-                id: friendModel
-                onJsonChanged: {
-                    if (count > 0) {
-                        //console.log("friends count: " + count)
-                        friendView.model = model;
-                    }
-                }
-            }
-
-            Component {
-                id: friendDelegate
-
-                ListItem.Subtitled {
-                    icon: Qt.resolvedUrl("friend.png")
-                    text: (markname ? markname : nick)// + " (" + uin + ")"
-                    //subText: "subtitle"
-                    clip: true
-                    iconFrame: false
-                    //highlightWhenPressed: false
-                }
-            }
-
-            states: State {
-                name: "Expand"
-
-                PropertyChanges {
-                    target: listView.ListView.view.currentItem
-                    height: listView.ListView.view.height
-                }
-                PropertyChanges {
-                    target: listView.ListView.view
-                    interactive: false
-                }
-                PropertyChanges {
-                    target: listView.ListView.view
-                    explicit: true
-                    contentY: listView.y
-                }
-                PropertyChanges {
-                    target: progressionArrow
-                    rotation: 90
-                }
-            }
-            transitions: Transition {
-                NumberAnimation { properties: "height,contentY,rotation,opacity" }
-            }
         }
+    }
+    function onCategoryReady() {
+        categories.model = QQ.Client.getCategories();
     }
 }

@@ -11,11 +11,15 @@ MOC_DIR = tmp
 
 SOURCES += uqqclient.cpp \
            uqqplugin.cpp \
-    uqqcontact.cpp
+    uqqcontact.cpp \
+    uqqmember.cpp \
+    uqqcategory.cpp
 
 HEADERS += uqqclient.h \
            uqqplugin.h \
-    uqqcontact.h
+    uqqcontact.h \
+    uqqmember.h \
+    uqqcategory.h
 
 OTHER_FILES += \
     loginSuccess.txt

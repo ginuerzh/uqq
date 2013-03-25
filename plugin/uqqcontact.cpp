@@ -20,21 +20,31 @@ UQQContact::~UQQContact() {
 */
 void UQQContact::setDataMap(const QVariantMap &map) {
 
-    setFriends(map.value("friends").toList());
+    setCategories(map.value("categories").toList());
+
+    setMembers(map.value("friends").toList());
     setMarknames(map.value("marknames").toList());
     setVipInfo(map.value("vipinfo").toList());
     setInfo(map.value("info").toList());
-    setCategories(map.value("categories").toList());
-    setCategoryFriends();
+
+    emit categoryReady();
 }
 
-void UQQContact::setFriends(const QVariantList &list) {
+void UQQContact::setMembers(const QVariantList &list) {
     QVariantMap m;
-    qDebug() << "total friends:" << list.size();
+    UQQMember *member;
+    int category;
+    QString uin;
+
+    //qDebug() << "total friends:" << list.size();
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
-        m.insert("status", "offline");  // default status is 'offline'
-        m_friends.insert(m.value("uin").toString(), m); // key: 'uin', value: map
+        category = m.value("categories").toInt() + 1;
+        uin = m.value("uin").toString();
+        member = new UQQMember(category, uin);
+        m_members.insert(m.value("uin").toString(), member);
+
+        addMemberToCategory(category, member);
     }
 }
 
@@ -43,7 +53,7 @@ void UQQContact::setMarknames(const QVariantList &list) {
 
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
-        addFriendInfo(m.value("uin").toString(), "markname", m.value("markname"));
+        m_members[m.value("uin").toString()]->setMarkname(m.value("markname").toString());
     }
 }
 
@@ -53,8 +63,8 @@ void UQQContact::setVipInfo(const QVariantList &list) {
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         QString uin = m.value("u").toString();
-        addFriendInfo(uin, "vip_level", m.value("vip_level"));
-        addFriendInfo(uin, "is_vip", m.value("is_vip"));
+        m_members[uin]->setVip(m.value("is_vip").toBool());
+        m_members[uin]->setVipLevel(m.value("vip_level").toInt());
     }
 }
 
@@ -64,119 +74,72 @@ void UQQContact::setInfo(const QVariantList &list) {
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         QString uin = m.value("uin").toString();
-        addFriendInfo(uin, "face", m.value("face"));
-        addFriendInfo(uin, "nick", m.value("nick"));
+        m_members[uin]->setNickname(m.value("nick").toString());
     }
 }
 
 void UQQContact::setCategories(const QVariantList &list) {
     QVariantMap m;
+    UQQCategory *category;
 
-//    // 固定为'在线好友', 放在第一组
-//    m.insert("sort", 0);
-//    m.insert("name", "在线好友");
-//    m_categories.append(m);
+    category = new UQQCategory();
+    category->setName("在线好友");
+    category->setIndex(0);
+    m_categories.append(category);
 
-    m.insert("index", 0);
-    m.insert("sort", 0);
-    m.insert("name", "我的好友");
-    m_categories.append(m);
+    category = new UQQCategory();
+    category->setName("我的好友");
+    category->setIndex(1);
+    m_categories.append(category);
 
-    m_categories.append(list);
-
-    for (int i = 0; i < m_categories.size(); i++) {
-        m = m_categories.takeAt(i).toMap();
-        m.insert("online", 0);  // online friends
-        m.insert("total", 0);   // total friends
-        m_categories.insert(i, m);
+    for (int i = 0; i < list.size(); i++) {
+        m = list.at(i).toMap();
+        category = new UQQCategory();
+        category->setName(m.value("name").toString());
+        category->setIndex(i + 2);
+        m_categories.append(category);
     }
+
+    //qDebug() << "setCategories:" << m_categories.size();
+}
+bool UQQContact::addMemberToCategory(int category, UQQMember *member) {
+    UQQCategory *cate;
+    if (category >= 0 && category < m_categories.size()) {
+        cate = qobject_cast<UQQCategory *>(m_categories.at(category));
+        cate->addMember(member);
+        return true;
+    }
+    return false;
 }
 
-void UQQContact::setCategoryFriends() {
-    for (int i = 0; i < m_categories.size(); i++) {
-        m_catefriends.append(friendsInCategory(i));
-        addCategoryInfo(i, "total", m_catefriends.at(i).size());
-    }
+QList<UQQCategory *> &UQQContact::categories() {
+    return m_categories;
+}
+
+QHash<QString, UQQMember*> &UQQContact::members() {
+    return m_members;
 }
 
 void UQQContact::setOnlineBuddies(const QVariantList &list) {
     QVariantMap m;
-
-    //qDebug() << "status size:" << list.size();
+    QString status;
+    UQQMember *member;
+    int online;
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
-        QString uin = m.value("uin").toString();
-        addFriendInfo(uin, "status", m.value("status"));
-        addFriendInfo(uin, "client_type", m.value("client_type"));
+        status = m.value("status").toString();
+        member = m_members[m.value("uin").toString()];
+        member->setStatus(status);
+        member->setClientType(m.value("client_type").toInt());
 
-        int index = category(uin);
-        if (index >= 0) {
-            addCategoryInfo(index, "online", getCategoryInfo(index, "online").toInt() + 1);
-        }
-        m_onlines.append(m);
+        online = categories().at(member->category())->online();
+        categories().at(member->category())->setOnline(online + 1);
     }
-    emit categoryReady(listToJson(m_categories));
 }
 
-QVariantList UQQContact::friendsInCategory(int index) {
-    QVariantList list;
-    if (index < 0 || index >= m_categories.size())
-        return list;
-
-    for (QHash<QString, QVariantMap>::const_iterator iter = m_friends.constBegin();
-         iter != m_friends.constEnd(); iter++) {
-        if (category(iter.key()) == index) {
-            list << iter.value();
-        }
-    }
-    return list;
+QList<UQQMember *> &UQQContact::membersInCategory(int category) {
+    return m_categories.at(category)->getMembers();
 }
-
-QVariantList UQQContact::getCategoryFriends(int index) {
-    QVariantList list;
-    if (index < 0 || index >= m_catefriends.size())
-        return list;
-    return m_catefriends.at(index);
-}
-
-int UQQContact::category(const QString uin) {
-    if (m_friends.empty() || !m_friends.contains(uin))
-        return -1;
-    return m_friends[uin].value("categories", -1).toInt();
-}
-
-bool UQQContact::addFriendInfo(const QString &uin,
-                               const QString &key, const QVariant &value) {
-    if (m_friends.empty() || !m_friends.contains(uin)) {
-        qWarning() << "addFriendInfo error!" << uin << key << value.toString();
-        return false;
-    }
-
-    m_friends[uin].insert(key, value);
-    return true;
-}
-
-bool UQQContact::addCategoryInfo(int index,
-                                 const QString &key, const QVariant &value) {
-    if (index < 0 || index >= m_categories.size()) {
-        qWarning() << "addCategoryInfo error!" << index << key << value.toString();
-        return false;
-    }
-
-    QVariantMap m = m_categories.takeAt(index).toMap();
-    m.insert(key, value);
-    m_categories.insert(index, m);
-    return true;
-}
-
-QVariant UQQContact::getCategoryInfo(int index, const QString &key) {
-    if (index < 0 || index >= m_categories.size()) {
-        qWarning() << "getCategoryInfo error!";
-        return false;
-    }
-    return m_categories.at(index).toMap().value(key, "");
-}
-
 
 QString UQQContact::mapToJson(const QVariantMap &map) {
     QJsonDocument doc(QJsonObject::fromVariantMap(map));

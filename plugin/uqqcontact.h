@@ -2,6 +2,8 @@
 #define UQQCONTACT_H
 
 #include <QtQml>
+#include "uqqcategory.h"
+#include "uqqmember.h"
 
 class UQQContact : public QObject
 {
@@ -15,34 +17,26 @@ public:
 
     void setDataMap(const QVariantMap &map);
     void setOnlineBuddies(const QVariantList &list);
-    QVariantList getCategoryFriends(int index);
+    QList<UQQCategory *> &categories();
+    QHash<QString, UQQMember*> &members();
+    QList<UQQMember *> &membersInCategory(int category);
 
 private:
-    void setFriends(const QVariantList &list);
+    void setCategories(const QVariantList &list);
+    void setMembers(const QVariantList &list);
     void setMarknames(const QVariantList &list);
     void setVipInfo(const QVariantList &list);
     void setInfo(const QVariantList &list);
-    void setCategories(const QVariantList &list);
-    void setCategoryFriends();
-
-    bool addFriendInfo(const QString &uin,
-                  const QString &key, const QVariant &value);
-    bool addCategoryInfo(int index,
-                  const QString &key, const QVariant &value) ;
-    QVariant getCategoryInfo(int index, const QString &key);
-    int category(const QString uin);
-    QVariantList friendsInCategory(int index);
+    bool addMemberToCategory(int category, UQQMember *member);
 
 signals:
-    void categoryReady(QString json);
-    
+    void categoryReady();
+
 public slots:
 
 private:
-    QVariantList m_categories;
-    QHash<QString, QVariantMap> m_friends;
-    QList<QVariantList> m_catefriends;
-    QVariantList m_onlines;
+    QList<UQQCategory *> m_categories;
+    QHash<QString, UQQMember*> m_members;
 };
 
 #endif // UQQCONTACT_H

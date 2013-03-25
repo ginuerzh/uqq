@@ -5,8 +5,6 @@ import UQQ 1.0 as QQ
 
 Item {
     Component.onCompleted: {
-        QQ.Client.userDetailChanged.connect(onUserDetailChanged);
-        QQ.Client.userFaceChanged.connect(onUserFaceChanged);
         QQ.Client.loadUserInfo();
     }
 
@@ -82,14 +80,6 @@ Item {
                 detail.description = info.personal;
             }
         }
-    }
-
-    function onUserDetailChanged(json) {
-        userModel.json = json;
-    }
-    function onUserFaceChanged(name) {
-        homePageTab.iconSource = Qt.resolvedUrl(name);
-        user.icon = Qt.resolvedUrl(name);
     }
 }
 

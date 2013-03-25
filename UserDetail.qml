@@ -149,3 +149,4 @@ Column {
         value: detail.description
     }
 }
+

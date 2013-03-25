@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'uqqcontact.h'
 **
-** Created: Fri Mar 22 20:14:42 2013
+** Created: Sun Mar 24 22:12:39 2013
 **      by: The Qt Meta Object Compiler version 67 (Qt 5.0.0)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -20,8 +20,8 @@
 
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_UQQContact_t {
-    QByteArrayData data[4];
-    char stringdata[32];
+    QByteArrayData data[3];
+    char stringdata[27];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -32,10 +32,9 @@ static const qt_meta_stringdata_UQQContact_t qt_meta_stringdata_UQQContact = {
     {
 QT_MOC_LITERAL(0, 0, 10),
 QT_MOC_LITERAL(1, 11, 13),
-QT_MOC_LITERAL(2, 25, 0),
-QT_MOC_LITERAL(3, 26, 4)
+QT_MOC_LITERAL(2, 25, 0)
     },
-    "UQQContact\0categoryReady\0\0json\0"
+    "UQQContact\0categoryReady\0\0"
 };
 #undef QT_MOC_LITERAL
 
@@ -53,10 +52,10 @@ static const uint qt_meta_data_UQQContact[] = {
        1,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    1,   19,    2, 0x05,
+       1,    0,   19,    2, 0x05,
 
  // signals: parameters
-    QMetaType::Void, QMetaType::QString,    3,
+    QMetaType::Void,
 
        0        // eod
 };
@@ -66,19 +65,20 @@ void UQQContact::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     if (_c == QMetaObject::InvokeMetaMethod) {
         UQQContact *_t = static_cast<UQQContact *>(_o);
         switch (_id) {
-        case 0: _t->categoryReady((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 0: _t->categoryReady(); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         void **func = reinterpret_cast<void **>(_a[1]);
         {
-            typedef void (UQQContact::*_t)(QString );
+            typedef void (UQQContact::*_t)();
             if (*reinterpret_cast<_t *>(func) == static_cast<_t>(&UQQContact::categoryReady)) {
                 *result = 0;
             }
         }
     }
+    Q_UNUSED(_a);
 }
 
 const QMetaObject UQQContact::staticMetaObject = {
@@ -118,9 +118,8 @@ int UQQContact::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 }
 
 // SIGNAL 0
-void UQQContact::categoryReady(QString _t1)
+void UQQContact::categoryReady()
 {
-    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
-    QMetaObject::activate(this, &staticMetaObject, 0, _a);
+    QMetaObject::activate(this, &staticMetaObject, 0, 0);
 }
 QT_END_MOC_NAMESPACE

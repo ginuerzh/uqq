@@ -6,9 +6,8 @@ UQQClient::UQQClient(QObject *parent)
     m_manager = new QNetworkAccessManager(this);
     m_contact = new UQQContact(this);
 
-    addLoginInfo("aid", QVariant("1003903"));
-    addLoginInfo("clientid", getClientId());
-
+    addLoginInfo("aid", QVariant("1003903"));  // appid
+    addLoginInfo("clientid", getClientId());   // clientid
 
     QObject::connect(m_manager, &QNetworkAccessManager::finished,
                     this, &UQQClient::onFinished);
@@ -21,8 +20,22 @@ UQQClient::~UQQClient() {
     delete m_contact;
 }
 
+void UQQClient::initConfig() {
+    QString rootPath = QDir::homePath() + "/.UQQ";
+    addConfig("rootPath", rootPath);  // the data root path
+    QString userPath = rootPath + "/" + getLoginInfo("uin").toString();
+    addConfig("userPath", userPath);
+    QString facePath = userPath + "/faces";
+    addConfig("facePath", facePath);    // the face images path
+
+    QDir path;
+    if (!path.mkpath(facePath))
+        qDebug() << "Error: make path " << facePath;
+}
+
 void UQQClient::onFinished(QNetworkReply *reply) {
     bool ok;
+    QString uin = reply->request().attribute(QNetworkRequest::UserMax).toString();
     Action action =
             (Action)reply->request().attribute(QNetworkRequest::User).toInt(&ok);
 
@@ -46,7 +59,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         verifySecondLogin(data);
         break;
     case GetLongNickAction:
-        parseLongNick(data);
+        parseLongNick(uin, data);
         break;
     case GetUserLevelAction:
         parseUserLevel(data);
@@ -55,7 +68,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         parseUserDetail(data);
         break;
     case GetUserFaceAction:
-        saveUserFace(data);
+        saveFace(uin, data);
         break;
     case LoadContactAction:
         parseContact(data);
@@ -80,11 +93,13 @@ void UQQClient::checkCode(QString uin) {
     query.addQueryItem("appid", UQQClient::AID);
     query.addQueryItem("r", "0.31415926535");
     */
-    if (getLoginInfo("uin").toString() == uin)
+    if (getLoginInfo("uin").toString() == uin) {
+        qDebug() << "Same uin" << uin;
         return;
+    }
 
     QString url = QString("http://check.ptlogin2.qq.com/check?&uin=%1&appid=%2&r=%3")
-            .arg(uin, getLoginInfo("aid").toString(), getRandom());
+            .arg(uin, getConfig("aid").toString(), getRandom());
     QNetworkRequest request;
 
     addLoginInfo("uin", uin);
@@ -173,7 +188,7 @@ void UQQClient::secondLogin() {
             "&clientid=%4&psessionid=null")
             .arg("hidden", ptwebqq,
                  getLoginInfo("clientid").toString(),
-                 getLoginInfo("").toString());
+                 getLoginInfo("clientid").toString());
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, SecondLoginAction);
@@ -194,6 +209,8 @@ void UQQClient::verifySecondLogin(const QByteArray &data) {
 
         addUserInfo("status", m.value("status"));
 
+        initConfig();
+
         emit loginSuccess();    // Login successget
     } else {
         qDebug() << data;
@@ -203,19 +220,20 @@ void UQQClient::verifySecondLogin(const QByteArray &data) {
 }
 
 void UQQClient::loadUserInfo() {
+    return;
     getUserFace();
-    getLongNick();
+    getLongNick(getLoginInfo("uin").toString());
     getUserLevel();
     getUserDetail();
 }
 
-void UQQClient::getLongNick() {
+void UQQClient::getLongNick(const QString &uin) {
     QString url = QString("http://s.web2.qq.com/api/get_single_long_nick2?tuin=%1&vfwebqq=%2&t=%3")
-            .arg(getLoginInfo("uin").toString(),
-                 getLoginInfo("vfwebqq").toString(), getTimestamp());
+            .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, GetLongNickAction);
+    request.setAttribute(QNetworkRequest::UserMax, uin);
     request.setUrl(QUrl(url));
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
@@ -226,16 +244,14 @@ void UQQClient::getLongNick() {
  * long nick json format:
  * {"retcode":0,"result":[{"uin":1279450562,"lnick":"123456"}]}
  */
-void UQQClient::parseLongNick(const QByteArray &data) {
+void UQQClient::parseLongNick(const QString &uin, const QByteArray &data) {
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
     QVariantList list;
     if (m.value("retcode", DefaultError).toInt() == NoError &&
             (list = m.value("result").toList()).size() > 0) {
         m = list.at(0).toMap();
-
-        addUserInfo("lnick", m.value("lnick"));
-        emit longNickChanged(UQQContact::mapToJson(m_userInfo));
+        m_contact->members()[uin]->setLongnick(m.value("lnick").toString());
     } else {
         qDebug() << data;
     }
@@ -267,7 +283,6 @@ void UQQClient::parseUserLevel(const QByteArray &data) {
     QVariantMap m = obj.toVariantMap();
     if (m.value("retcode", DefaultError).toInt() == NoError) {
         m_userInfo.insert("levels", m.value("result").toMap());
-        emit userLevelChanged(UQQContact::mapToJson(m_userInfo));
     } else {
         qDebug() << data;
     }
@@ -294,8 +309,7 @@ void UQQClient::parseUserDetail(const QByteArray &data) {
         m = m.value("result").toMap();
 
         m_userInfo.unite(m);
-        addUserInfo("uin", getLoginInfo("uin"));    // double to string, avoid precise loss
-        emit userDetailChanged(UQQContact::mapToJson(m_userInfo)); // all user info has been obtained
+        addUserInfo("uin", getLoginInfo("uin"));
     } else {
         qDebug() << data;
     }
@@ -311,27 +325,48 @@ void UQQClient::listUserInfo() {
 }
 
 void UQQClient::getUserFace() {
-    QString url = QString("http://face10.qun.qq.com/cgi/svr/face/getface?cache=1&type=1&fid=0&uin=%1&vfwebqq=%2")
-            .arg(getLoginInfo("uin").toString(), getLoginInfo("vfwebqq").toString());
+    //getFace(getLoginInfo("uin").toString(), 1);
+}
+
+void UQQClient::getMemberFace(QString uin) {
+    getFace(uin);
+}
+
+void UQQClient::getFace(const QString &uin, int cache, int type) {
+    QString url = QString("http://face%1.qun.qq.com/cgi/svr/face/getface?cache=%2&type=%3&fid=0&uin=%4&vfwebqq=%5")
+            .arg(QString::number(qrand() % 10 + 1), // the random domain (face1 - face10)
+                 QString::number(cache), QString::number(type),
+                 uin, getLoginInfo("vfwebqq").toString());
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, GetUserFaceAction);
+    request.setAttribute(QNetworkRequest::UserMax, uin);
     request.setUrl(QUrl(url));
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
 
-void UQQClient::saveUserFace(const QByteArray &data) {
-    // png signature: 89:50:4e:47:0d:0a:1a:0a
-    QString name = getLoginInfo("uin").toString() + imageFormat(data);
-    QFile file(name);
+void UQQClient::saveFace(const QString &uin, const QByteArray &data) {
+    QString facePath = getConfig("facePath").toString();
+    QString path = facePath + "/" + uin + imageFormat(data);
 
+    QFile file(path);
     file.open(QIODevice::WriteOnly | QIODevice::Truncate);
     file.write(data);
     file.close();
 
-    addUserInfo("facename", name);
-    emit userFaceChanged(name);
+    m_contact->members()[uin]->setFace(path);
+}
+
+// get friends' face images in the category index
+void UQQClient::loadInfoInCategory(int category) {
+    QString uin;
+    QList<UQQMember *> members = m_contact->membersInCategory(category);
+    for (int i = 0; i < members.size(); i++) {
+        uin = members.at(i)->uin();
+        getMemberFace(uin);
+        getLongNick(uin);
+    }
 }
 
 void UQQClient::loadContact() {
@@ -413,8 +448,22 @@ void UQQClient::parseOnlineBuddies(const QByteArray &data) {
     }
 }
 
-QString UQQClient::getFriendsInCategory(int index) {
-    return UQQContact::listToJson(m_contact->getCategoryFriends(index));
+QList<QObject *> UQQClient::getCategories() {
+    QList<QObject *> categories;
+    QList<UQQCategory *> list = m_contact->categories();
+    for (int i = 0; i < list.size(); i++) {
+        categories.append(list.at(i));
+    }
+    return categories;
+}
+
+QList<QObject *> UQQClient::getCategoryMembers(int category) {
+    QList<QObject *> members;
+    QList<UQQMember *> list = m_contact->membersInCategory(category);
+    for (int i = 0; i < list.size(); i++) {
+        members.append(list.at(i));
+    }
+    return members;
 }
 
 QString UQQClient::imageFormat(const QByteArray &data) {
