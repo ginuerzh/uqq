@@ -9,17 +9,21 @@ class UQQContact : public QObject
 {
     Q_OBJECT
 public:
+
     explicit UQQContact(QObject *parent = 0);
     ~UQQContact();
 
-    static QString mapToJson(const QVariantMap &map);
-    static QString listToJson(const QVariantList &list);
+    //static QString mapToJson(const QVariantMap &map);
+    //static QString listToJson(const QVariantList &list);
 
     void setDataMap(const QVariantMap &map);
     void setOnlineBuddies(const QVariantList &list);
     QList<UQQCategory *> &categories();
     QHash<QString, UQQMember*> &members();
-    QList<UQQMember *> &membersInCategory(int category);
+    UQQMember *member(const QString &uin);
+    QList<QObject *> &membersInCategory(int category);
+    void addMember(UQQMember *member);
+    void setBuddyStatus(QString uin, int status, int clientType);
 
 private:
     void setCategories(const QVariantList &list);
@@ -27,10 +31,9 @@ private:
     void setMarknames(const QVariantList &list);
     void setVipInfo(const QVariantList &list);
     void setInfo(const QVariantList &list);
+    void setCategoryMembers();
     bool addMemberToCategory(int category, UQQMember *member);
-
 signals:
-    void categoryReady();
 
 public slots:
 

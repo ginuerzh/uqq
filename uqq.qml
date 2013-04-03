@@ -11,7 +11,7 @@ import UQQ 1.0 as QQ
 Loader {
     id: loader
     focus: true
-    source: "LoginForm.qml"
+    source: "components/LoginForm.qml"
     //source: "MainPage.qml"
 }
 

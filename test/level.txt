@@ -1,0 +1,1 @@
+{"retcode":0,"result":{"level":40,"days":1802,"hours":13476,"remainDays":43,"tuin":121830387}}

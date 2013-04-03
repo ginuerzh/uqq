@@ -7,7 +7,7 @@ function pwdMd5(uinHex, password, vc) {
     // thanks 'http://www.qicq5.com/' forum for this algorithm.
 
     if (uinHex.length === 0 || password.length === 0 || vc.length === 0) {
-        console.log("pwdMd5 error");
+        //console.log("pwdMd5 error");
         return;
     }
 

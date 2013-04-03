@@ -1,0 +1,1 @@
+{"retcode":0,"result":[{"uin":121830387,"lnick":"uqq - QQ client for ubuntu phone."}]}

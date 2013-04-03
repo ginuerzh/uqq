@@ -8,6 +8,16 @@ MainView {
     width: units.gu(45)
     height: units.gu(80)
 
+    Timer {
+        interval: 6000
+        repeat: true
+        running: true
+        triggeredOnStart: true
+        onTriggered: {
+            QQ.Client.poll();
+        }
+    }
+
     Tabs {
         id: tabs
 
@@ -15,7 +25,8 @@ MainView {
             id: homePageTab
             objectName: "mainPage"
             title: i18n.tr("QQ")
-            page: HomePage { anchors.fill: parent
+            page: HomePage {
+                anchors.fill: parent
                 anchors.topMargin: units.gu(9.5)
             }
         }

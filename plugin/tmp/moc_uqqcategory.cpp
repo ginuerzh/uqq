@@ -1,8 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'uqqcategory.h'
 **
-** Created: Sun Mar 24 16:27:07 2013
-**      by: The Qt Meta Object Compiler version 67 (Qt 5.0.0)
+** Created by: The Qt Meta Object Compiler version 67 (Qt 5.0.1)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
@@ -13,7 +12,7 @@
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'uqqcategory.h' doesn't include <QObject>."
 #elif Q_MOC_OUTPUT_REVISION != 67
-#error "This file was generated using the moc from 5.0.0. It"
+#error "This file was generated using the moc from 5.0.1. It"
 #error "cannot be used with the include files from this version of Qt."
 #error "(The moc has changed too much.)"
 #endif
@@ -75,7 +74,7 @@ static const uint qt_meta_data_UQQCategory[] = {
  // properties: name, type, flags
        6, QMetaType::QString, 0x00495103,
        7, QMetaType::Int, 0x00495103,
-       8, QMetaType::Int, 0x00495103,
+       8, QMetaType::Int, 0x00495001,
        9, QMetaType::Int, 0x00495001,
 
  // properties: notify_signal_id
@@ -177,7 +176,6 @@ int UQQCategory::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         switch (_id) {
         case 0: setName(*reinterpret_cast< QString*>(_v)); break;
         case 1: setOnline(*reinterpret_cast< int*>(_v)); break;
-        case 2: setTotal(*reinterpret_cast< int*>(_v)); break;
         }
         _id -= 4;
     } else if (_c == QMetaObject::ResetProperty) {

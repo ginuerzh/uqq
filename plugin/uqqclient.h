@@ -17,17 +17,21 @@ public:
 
         // After login
         GetLongNickAction = 10,
-        GetUserLevelAction,
-        GetUserDetailAction,
+        GetAccountAction,
+        GetMemberLevelAction,
+        GetMemberInfoAction,
         GetUserFaceAction,
         LoadContactAction,
-        GetOnlineBuddiesAction
+        GetOnlineBuddiesAction,
+        PollMessageAction
     };
 
     enum Error {
         NoError,
         PasswordError = 3,
         CaptchaError,
+        PollNormalReturn = 102,
+        PollOfflineError,
         DefaultError = 10000
     };
 
@@ -45,11 +49,15 @@ public:
 
     Q_INVOKABLE void checkCode(QString uin);
     Q_INVOKABLE void login(QString uin, QString pwd, QString vc);
-    Q_INVOKABLE void loadUserInfo();
+    Q_INVOKABLE void getMemberDetail(QString uin);
     Q_INVOKABLE void loadContact();
     Q_INVOKABLE QList<QObject *> getCategories();
     Q_INVOKABLE QList<QObject *> getCategoryMembers(int category);
+    //Q_INVOKABLE QList<QObject *> getMember(QString uin);
     Q_INVOKABLE void loadInfoInCategory(int category);
+    Q_INVOKABLE void getMemberFace(QString uin);
+    Q_INVOKABLE void getOnlineBuddies();
+    Q_INVOKABLE void poll();
 
 private:
     void initConfig();
@@ -63,18 +71,18 @@ private:
     void secondLogin();
     void verifySecondLogin(const QByteArray &data);
 
-    void getLongNick(const QString &uin);
+    void getLongNick(QString uin);
     void parseLongNick(const QString &uin, const QByteArray &data);
-    void getUserLevel();
-    void parseUserLevel(const QByteArray &data);
-    void getUserDetail();
-    void parseUserDetail(const QByteArray &data);
+    void getMemberLevel(const QString &uin);
+    void parseMemberLevel(const QString &uin, const QByteArray &data);
+    void getMemberInfo(const QString &uin);
+    void parseMemberInfo(const QString &uin, const QByteArray &data);
     void getUserFace();
-    void getMemberFace(QString uin);
+    void getMemberAccount(const QString &uin);
+    void parseAccount(const QString &uin, const QByteArray &data);
     void getFace(const QString &uin, int cache = 0, int type = 1);
     void saveFace(const QString &uin, const QByteArray &data);
     void parseContact(const QByteArray &data);
-    void getOnlineBuddies();
     void parseOnlineBuddies(const QByteArray &data);
 
     int parseParamList(const QString &data, QStringList &paramList);
@@ -85,20 +93,39 @@ private:
     QString getTimestamp();
     QString imageFormat(const QByteArray &data);
 
-    void listUserInfo();
+    void onLoginSuccess(const QString &uin, const QString &status);
+
+    void parsePoll(const QByteArray &data);
+    void pollStatusChanged(QVariantMap m);
+    void pollMessage(QVariantMap m);
+    void pollKickMessage(QVariantMap m);
+
+    // for test
+    void testCheckCode(const QString &uin);
+    void testGetCaptcha();
+    void testLoadContact();
+    void testGetOnlineBuddies();
+    void testLogin(const QString &uin, const QString &pwd, const QString &vc);
+    void testGetMemberDetail(const QString &uin);
+    void testGetMemberAccount(const QString &uin);
+    void testGetMemberLevel(const QString &uin);
+    void testGetLongNick(const QString &uin);
+    void testGetMemberInfo(const QString &uin);
+    void testLoadInfoCategory(int category);
+    void testPoll();
 
 signals:
     void errorChanged(int errCode);
     void captchaChanged(bool needed);
     void loginSuccess();
     void categoryReady();
+    void onlineStatusChanged();
 
 public slots:
     void onFinished(QNetworkReply *reply);
 
 private:
     QVariantMap m_loginInfo;
-    QVariantMap m_userInfo;
     QVariantMap m_config;
     QNetworkAccessManager *m_manager;
 

@@ -6,11 +6,6 @@ import UQQ 1.0 as QQ
 Item {
     id: contact
 
-    Component.onCompleted: {
-        QQ.Client.categoryReady.connect(onCategoryReady);
-        QQ.Client.loadContact();
-    }
-
     Flickable {
         id: flick
         anchors.fill: parent
@@ -23,17 +18,20 @@ Item {
             Repeater {
                 id: categories
 
+                model: QQ.Client.getCategories()
+
                 Category {
                     id: category
                     width: parent.width
+                    property bool loaded: false
+
+                    //model: QQ.Client.getCategoryMembers(index);
 
                     onClicked: {
-                        if (!category.loaded) {
-                            //console.log("load friends in category " + index);
-                            category.loaded = true;
-                            category.model = QQ.Client.getCategoryMembers(index);
-                            QQ.Client.loadInfoInCategory(index);
+                        if (!loaded) {
+                            model = QQ.Client.getCategoryMembers(index);
                         }
+
                         if (category.state == "" && category.model.length > 0) {
                             category.state = "Expand"
                         } else {
@@ -62,14 +60,23 @@ Item {
                         }
                     }
 
-                    transitions: Transition {
-                        NumberAnimation { properties: "height,contentY,rotation,opacity" }
-                    }
+                    transitions: [
+                        Transition {
+                            from: ""
+                            to: "Expand"
+                            SequentialAnimation {
+                                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                                //ScriptAction { script: QQ.Client.getOnlineBuddies(); }
+                            }
+                        },
+                        Transition {
+                            from: "Expand"
+                            to: ""
+                            NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                        }
+                    ]
                 }
             }
         }
-    }
-    function onCategoryReady() {
-        categories.model = QQ.Client.getCategories();
     }
 }

@@ -12,6 +12,8 @@ Item {
         QQ.Client.captchaChanged.connect(onCaptchaChanged);
         QQ.Client.errorChanged.connect(onErrorChanged);
         QQ.Client.loginSuccess.connect(onLoginSuccess);
+
+        QQ.Client.categoryReady.connect(onCategoryReady);
     }
 
     Component.onDestruction: {
@@ -22,7 +24,7 @@ Item {
         spacing: units.gu(1)
 
         Image {
-            source: "logo.png"
+            source: "../logo.png"
         }
 
         Label {
@@ -31,7 +33,6 @@ Item {
             clip: true
 
             color: "red"
-            //text: QQ.Client.errCode ? QQ.Client.getLoginInfo("errMsg") : " "
         }
 
         FormInput {
@@ -46,7 +47,6 @@ Item {
                     QQ.Client.checkCode(text);
                 }
             }
-            //validator: RegExpValidator { regExp: /\d{5,}/ }
         }
         FormInput {
             id: password
@@ -77,6 +77,12 @@ Item {
                 visible: false
                 cache: false
             }
+            ActivityIndicator {
+                id: indicator
+                anchors.right: loginButton.left
+                anchors.rightMargin: units.gu(1)
+            }
+
             Button {
                 id: loginButton
                 anchors.right: parent.right
@@ -103,14 +109,20 @@ Item {
     }
 
     function onErrorChanged(errCode) {
+
         if (errCode === 0) {
             errMsg.text = " ";
         } else {
             errMsg.text = QQ.Client.getLoginInfo("errMsg");
+            indicator.running = false;
         }
     }
 
     function onLoginSuccess() {
+        QQ.Client.loadContact();
+    }
+
+    function onCategoryReady() {
         loader.source = "MainPage.qml";
     }
 
@@ -132,6 +144,8 @@ Item {
         eval("var uinHex = '" + QQ.Client.getLoginInfo("uinHex") + "'");
         //console.log("qmllogin: " + QQ.Client.getLoginInfo("uinHex") + ", " + password + ", " + vc);
         pwdMd5 = MD5.pwdMd5(uinHex, password, vc);
+
+        indicator.running = true;
         QQ.Client.login(uin, pwdMd5, vc);
     }
 }
