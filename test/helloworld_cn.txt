@@ -1,0 +1,1 @@
+{"retcode":0,"result":[{"poll_type":"message","value":{"msg_id":35455,"from_uin":3067920540,"to_uin":1279450562,"msg_id2":863559,"msg_type":9,"reply_ip":176498346,"time":1364991230,"content":[["font",{"size":10,"color":"000000","style":[0,0,0],"name":"\u5B8B\u4F53"}],"\u4F60\u597D",["face",1],"\u4E16\u754C! "]}}]}

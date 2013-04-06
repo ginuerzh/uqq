@@ -1,4 +1,4 @@
 *~
 *.o
 *.so
-moc_*
+./plugin/tmp/
