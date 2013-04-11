@@ -5,6 +5,7 @@ import Ubuntu.Components.ListItems 0.1 as ListItem
 Column {
     id: brief
     spacing: units.gu(0.5)
+    clip: true
 
     property var gender: [
         "-", "男", "女"
@@ -34,11 +35,11 @@ Column {
         Field {
             width: parent.width / 2
             label: i18n.tr("QQ号码:")
-            value: model.modelData.account
+            value: modelData.account
         }
         Field {
             label: i18n.tr("等级")
-            value: model.modelData.level + "级"
+            value: modelData.level + "级"
         }
     }
 
@@ -48,21 +49,21 @@ Column {
         Field {
             width: parent.width / 4
             label: i18n.tr("性别:")
-            value: gender[modelData.gender]
+            value: modelData.detail ? gender[modelData.detail.gender] : gender[0]
         }
         Field {
             width: parent.width / 4
             label: i18n.tr("生肖:")
-            value: shengxiao[modelData.shengxiao]
+            value: modelData.detail ? shengxiao[modelData.detail.shengxiao] : shengxiao[0]
         }
         Field {
             width: parent.width / 4
             label: i18n.tr("星座:")
-            value: constel[modelData.constel]
+            value: modelData.detail ? constel[modelData.detail.constel] : constel[0]
         }
         Field {
             label: i18n.tr("   血型:")
-            value: blood[modelData.blood]
+            value: modelData.detail ? blood[modelData.detail.blood] : blood[0]
         }
     }
 
@@ -72,12 +73,15 @@ Column {
         Field {
             width: parent.width / 2
             label: i18n.tr("生日:")
-            value: modelData.birthday == "" ? "1970-01-01" : modelData.birthday
+            value: modelData.detail ? Qt.formatDate(modelData.detail.birthday, "yyyy-MM-dd") :
+                                      Qt.formatDate(new Date(), "yyyy-MM-dd")
         }
 
         Field {
             label: i18n.tr("来自")
-            value: modelData.country + modelData.province + modelData.city
+            value: modelData.detail ?
+                       modelData.detail.country + modelData.detail.province + modelData.detail.city :
+                       "-"
         }
     }
     Row {
@@ -86,11 +90,11 @@ Column {
         Field {
             width: parent.width / 2
             label: i18n.tr("毕业院校:")
-            value: modelData.college
+            value: modelData.detail ? modelData.detail.college : "-"
         }
         Field {
             label: i18n.tr("职业:")
-            value: modelData.occupation
+            value: modelData.detail ? modelData.detail.occupation : "-"
         }
     }
 
@@ -100,20 +104,20 @@ Column {
         Field {
             width: parent.width / 2
             label: i18n.tr("电话:")
-            value: modelData.phone
+            value: modelData.detail ? modelData.detail.phone : "-"
         }
         Field {
             label: i18n.tr("手机:")
-            value: modelData.mobile
+            value: modelData.detail ? modelData.detail.mobile : "-"
         }
     }
     Field {
         label: i18n.tr("邮箱:")
-        value: modelData.email
+        value: modelData.detail ? modelData.detail.email : "-"
     }
     Field {
         label: i18n.tr("个人主页:")
-        value: modelData.homepage
+        value: modelData.detail ? modelData.detail.homepage : "-"
     }
 
     Row {
@@ -123,7 +127,7 @@ Column {
         Label {id: personal; text: i18n.tr("个人说明:") }
         Label {
             width: parent.width - personal.width
-            text: modelData.personal
+            text: modelData.detail ? modelData.detail.personal : "-"
             elide: Text.ElideRight
             maximumLineCount: 2
             wrapMode: Text.Wrap

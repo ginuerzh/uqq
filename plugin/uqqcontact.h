@@ -19,6 +19,7 @@ public:
     void setDataMap(const QVariantMap &map);
     void setOnlineBuddies(const QVariantList &list);
     QList<UQQCategory *> &categories();
+    UQQCategory * getCategory(int cat);
     QHash<QString, UQQMember*> &members();
     UQQMember *member(const QString &uin);
     QList<QObject *> &membersInCategory(int category);
@@ -32,7 +33,7 @@ private:
     void setVipInfo(const QVariantList &list);
     void setInfo(const QVariantList &list);
     void setCategoryMembers();
-    bool addMemberToCategory(int category, UQQMember *member);
+    void addMemberToCategory(int category, UQQMember *member);
 signals:
 
 public slots:

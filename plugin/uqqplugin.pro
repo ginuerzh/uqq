@@ -13,13 +13,17 @@ SOURCES += uqqclient.cpp \
            uqqplugin.cpp \
     uqqcontact.cpp \
     uqqmember.cpp \
-    uqqcategory.cpp
+    uqqcategory.cpp \
+    uqqmessage.cpp \
+    uqqmemberdetail.cpp
 
 HEADERS += uqqclient.h \
            uqqplugin.h \
     uqqcontact.h \
     uqqmember.h \
-    uqqcategory.h
+    uqqcategory.h \
+    uqqmessage.h \
+    uqqmemberdetail.h
 
 OTHER_FILES += \
     loginSuccess.txt

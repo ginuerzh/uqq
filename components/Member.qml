@@ -5,22 +5,9 @@ import UQQ 1.0 as QQ
 
 Rectangle {
     id: member
-    width: parent.width
-    height: info.height + units.gu(2)
+    height: title.height + units.gu(2)
     clip: true
-    color: "mintcream"
-
-    Rectangle {
-        id:background
-        anchors {
-            left: parent.left
-            right: parent.right
-            top: parent.top
-        }
-        height: title.height + units.gu(2)
-
-        color: "whitesmoke"
-    }
+    color: "whitesmoke"
 
     Column {
         id: wrapper
@@ -32,88 +19,43 @@ Rectangle {
         }
         spacing: units.gu(1)
 
-        Item {
+        MemberTitle {
             id: title
             width: parent.width
-            height: info.height
 
-            UbuntuShape {
-                id: face
-                width: units.gu(5)
-                height: width
-                anchors.left: parent.left
+            icon: modelData.face == "" ? "../friend.png" : modelData.face
+            markname: modelData.markname
+            nickname: modelData.nickname
+            longnick: modelData.longnick
+            online: modelData.status !== 6
+            showMessageCount: member.state != "Message" && modelData.messageCount > 0
+            status: modelData.status
 
-                image: Image {
-                    source: model.modelData.face == "" ? "../friend.png" : model.modelData.face
+            onClicked: {
+                if (member.state == "") {
+                    member.state = "Detail"
                 }
-                opacity: model.modelData.status < 5 ? 1.0 : 0.3
-
-                MouseArea {
-                    anchors.fill: parent
-                    anchors.margins: -units.gu(1)
-                    onClicked: {
-                        //console.log("face clicked");
-                        if (member.state != "Message")
-                            member.state = "Message"
-                        else
-                            member.state = ""
-                    }
-                }
-            }
-            Column {
-                id: info
-                anchors {
-                    left: face.right
-                    right: parent.right
-                    leftMargin: units.gu(0.5)
-                }
-                spacing: units.gu(1)
-
-                Row {
-                    Label {
-                        text: model.modelData.markname == "" ? model.modelData.nickname : model.modelData.markname
-                    }
-                    Label {
-                        id: nickname
-                        opacity: 0
-                        text: model.modelData.markname == "" ? "" : "(" + model.modelData.nickname + ")"
-                    }
-                }
-                Label {
-                    width: parent.width
-                    text: model.modelData.longnick
-                    wrapMode: Text.Wrap
-                    elide: Text.ElideRight
-                    maximumLineCount: 3
-                }
+                else
+                    member.state = ""
             }
 
-            MouseArea {
-                anchors {
-                    fill: parent
-                    leftMargin: face.width + units.gu(1)
-                    rightMargin: -units.gu(1)
-                    topMargin: -units.gu(1)
-                    bottomMargin: -units.gu(1)
+            onIconClicked: {
+                if (member.state != "Message") {
+                    member.state = "Message"
                 }
-                onClicked: {
-                    if (member.state == "") {
-                        member.state = "Detail"
-                    }
-                    else
-                        member.state = ""
-                }
+                else
+                    member.state = ""
             }
         }
 
         Loader {
-            id: detailLoader
+            id: msgLoader
 
-            property var modelData: model.modelData
+            property bool showMsg: false
 
             width: parent.width
-            height: units.gu(23)
-            source: "Detail.qml"
+            height: member.ListView.view.height - title.height
+            source: "Message.qml"
             active: false
             opacity: 0
         }
@@ -124,30 +66,29 @@ Rectangle {
     states: [
         State {
             name: "Detail"
+
             PropertyChanges {
                 target: member
-                height: wrapper.height + units.gu(2)
+                height: title.height + units.gu(25)
             }
             PropertyChanges {
-                target: detailLoader
-                opacity: 1
+                target: title
+                showNickname: true
             }
             PropertyChanges {
-                target: member
-                color: "white"
-            }
-            PropertyChanges {
-                target: background
-                color: "aliceblue"
-            }
-            PropertyChanges {
-                target: nickname
+                target: msgLoader
+                active: true
                 opacity: 1
             }
         },
         State {
             name: "Message"
+            extend: "Detail"
 
+            PropertyChanges {
+                target: member
+                height: member.ListView.view.height
+            }
             PropertyChanges {
                 target: member.ListView.view
                 explicit: true
@@ -155,67 +96,37 @@ Rectangle {
                 interactive: false
             }
             PropertyChanges {
-                target: member
-                height: member.ListView.view.height
-            }
-            PropertyChanges {
-                target: member
-                color: "white"
-            }
-            PropertyChanges {
-                target: background
-                color: "aliceblue"
-            }
-            PropertyChanges {
-                target: nickname
-                opacity: 1
+                target: msgLoader
+                showMsg: true
             }
         }
-
     ]
 
     transitions: [
         Transition {
             from: ""
-            to: "Detail"
             SequentialAnimation {
-                PropertyAction { target: detailLoader; property: "active"; value: true }
                 ParallelAnimation {
-                    NumberAnimation { properties: "height,opacity" }
-                    ColorAnimation { }
+                    NumberAnimation { properties: "contentY,height,opacity" }
+                    ColorAnimation {}
                 }
-                ScriptAction { script: QQ.Client.getMemberDetail(model.modelData.uin); }
+                ScriptAction { script: if (modelData.detail == null) QQ.Client.getMemberDetail(modelData.uin); }
+            }
+        },
+        Transition {
+            to: ""
+            SequentialAnimation {
+                ParallelAnimation {
+                    NumberAnimation { properties: "contentY,height,opacity" }
+                    ColorAnimation {}
+                }
+                PropertyAction { target: msgLoader; property: "active"; value: false }
             }
         },
         Transition {
             from: "Detail"
-            to: ""
-            SequentialAnimation {
-                ParallelAnimation {
-                    NumberAnimation { properties: "height,opacity" }
-                    ColorAnimation {}
-                }
-                PropertyAction { target: detailLoader; property: "active"; value: false }
-            }
-        },
-        Transition {
-            from: "Message"
-            SequentialAnimation {
-                ParallelAnimation {
-                    NumberAnimation { properties: "contentY,height,opacity" }
-                    ColorAnimation {}
-                }
-            }
-        },
-        Transition {
             to: "Message"
-            SequentialAnimation {
-                ParallelAnimation {
-                    NumberAnimation { properties: "contentY,height,opacity" }
-                    ColorAnimation {}
-                }
-                PropertyAction { target: detailLoader; property: "active"; value: false }
-            }
+            NumberAnimation { properties: "contentY,height" }
         }
     ]
 }

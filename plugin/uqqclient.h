@@ -23,7 +23,8 @@ public:
         GetUserFaceAction,
         LoadContactAction,
         GetOnlineBuddiesAction,
-        PollMessageAction
+        PollMessageAction,
+        SendMessageAction
     };
 
     enum Error {
@@ -53,11 +54,12 @@ public:
     Q_INVOKABLE void loadContact();
     Q_INVOKABLE QList<QObject *> getCategories();
     Q_INVOKABLE QList<QObject *> getCategoryMembers(int category);
-    //Q_INVOKABLE QList<QObject *> getMember(QString uin);
+    Q_INVOKABLE QList<QObject *> getMember(QString uin);
     Q_INVOKABLE void loadInfoInCategory(int category);
     Q_INVOKABLE void getMemberFace(QString uin);
     Q_INVOKABLE void getOnlineBuddies();
     Q_INVOKABLE void poll();
+    Q_INVOKABLE void sendMessage(QString dstUin, QString content);
 
 private:
     void initConfig();
@@ -85,11 +87,15 @@ private:
     void parseContact(const QByteArray &data);
     void parseOnlineBuddies(const QByteArray &data);
 
+    QString sendMessageData(QString dstUin, QString content);
+    void parseSendMessage(const QString &uin, const QByteArray &data);
+
     int parseParamList(const QString &data, QStringList &paramList);
     QString getCookie(const QString &name, QUrl url) const;
 
     QString getClientId();
     QString getRandom();
+    int getRandomInt(int max);
     QString getTimestamp();
     QString imageFormat(const QByteArray &data);
 
@@ -97,22 +103,24 @@ private:
 
     void parsePoll(const QByteArray &data);
     void pollStatusChanged(QVariantMap m);
-    void pollMessage(QVariantMap m);
+    void pollMemberMessage(QVariantMap m);
     void pollKickMessage(QVariantMap m);
+
 
     // for test
     void testCheckCode(const QString &uin);
     void testGetCaptcha();
     void testLoadContact();
     void testGetOnlineBuddies();
-    void testLogin(const QString &uin, const QString &pwd, const QString &vc);
-    void testGetMemberDetail(const QString &uin);
+    void testLogin(const QString &pwd, const QString &vc);
+    void testGetFace(const QString &uin);
     void testGetMemberAccount(const QString &uin);
     void testGetMemberLevel(const QString &uin);
     void testGetLongNick(const QString &uin);
     void testGetMemberInfo(const QString &uin);
     void testLoadInfoCategory(int category);
     void testPoll();
+    void testSendMessage(QString dstUin, QString content);
 
 signals:
     void errorChanged(int errCode);
@@ -120,6 +128,11 @@ signals:
     void loginSuccess();
     void categoryReady();
     void onlineStatusChanged();
+    void buddyStatusChanged(int cat, QString uin);
+
+    void pollReceived();
+
+
 
 public slots:
     void onFinished(QNetworkReply *reply);

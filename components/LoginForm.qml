@@ -101,7 +101,7 @@ Item {
         if (needed) {
             captcha.visible = true;
             captchaImg.visible = true;
-            captchaImg.source = "captcha.jpg";
+            captchaImg.source = "../captcha.jpg";
         } else {
             captcha.visible = false;
             captchaImg.visible = false;

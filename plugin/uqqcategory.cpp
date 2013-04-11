@@ -1,7 +1,7 @@
 #include "uqqcategory.h"
 
 UQQCategory::UQQCategory(QObject *parent) :
-    QObject(parent), m_online(0), m_index(0)
+    QObject(parent), m_online(0), m_catIndex(IllegalCategory)
 {
 }
 
@@ -29,13 +29,13 @@ int UQQCategory::total() const {
     return m_members.size();
 }
 
-int UQQCategory::index() const {
-    return m_index;
+int UQQCategory::catIndex() const {
+    return m_catIndex;
 }
-void UQQCategory::setIndex(int index) {
-    if (index != m_index) {
-        m_index = index;
-        emit indexChanged();
+void UQQCategory::setCatIndex(int index) {
+    if (index != m_catIndex) {
+        m_catIndex = index;
+        emit catIndexChanged();
     }
 }
 /*
@@ -59,11 +59,11 @@ void UQQCategory::addMember(QObject *member) {
     }
 }
 
-bool UQQCategory::removeMember(const QString &uin) {
-    UQQMember *member;
+bool UQQCategory::removeMember(UQQMember *member) {
+    UQQMember *m;
     for (int i = 0; i < m_members.size(); i++) {
-        member = qobject_cast<UQQMember *>(m_members.at(i));
-        if (uin == member->uin()) {
+        m = qobject_cast<UQQMember *>(m_members.at(i));
+        if (member->uin() == m->uin()) {
            return removeMemberAt(i);
         }
     }

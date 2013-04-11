@@ -25,11 +25,12 @@ Item {
                     width: parent.width
                     property bool loaded: false
 
-                    //model: QQ.Client.getCategoryMembers(index);
+                    model: QQ.Client.getCategoryMembers(modelData.catIndex);
 
                     onClicked: {
                         if (!loaded) {
-                            model = QQ.Client.getCategoryMembers(index);
+                            loaded = true;
+                            QQ.Client.loadInfoInCategory(modelData.catIndex);
                         }
 
                         if (category.state == "" && category.model.length > 0) {
@@ -44,34 +45,18 @@ Item {
                         PropertyChanges {
                             target: category
                             height: contact.height
-                        }
-                        PropertyChanges {
-                            target: flick
-                            interactive: false
+                            rotation: 90
                         }
                         PropertyChanges {
                             target: flick
                             explicit: true
                             contentY: category.y
-                        }
-                        PropertyChanges {
-                            target: category
-                            rotation: 90
+                            interactive: false
                         }
                     }
 
                     transitions: [
                         Transition {
-                            from: ""
-                            to: "Expand"
-                            SequentialAnimation {
-                                NumberAnimation { properties: "height,contentY,rotation,opacity" }
-                                //ScriptAction { script: QQ.Client.getOnlineBuddies(); }
-                            }
-                        },
-                        Transition {
-                            from: "Expand"
-                            to: ""
                             NumberAnimation { properties: "height,contentY,rotation,opacity" }
                         }
                     ]

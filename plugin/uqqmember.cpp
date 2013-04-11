@@ -3,16 +3,13 @@
 UQQMember::UQQMember(int category, const QString &uin, QObject *parent) :
     QObject(parent), m_uin(uin), m_category(category)
 {
+    setDetail(Q_NULLPTR);
     setAccount("0");
     setVip(false);
     setVipLevel(0);
-    setBlood(0);
-    setShengxiao(0);
-    setAllow(false);
     setClientType(0);
-    setConstel(0);
     setStatus(OfflineStatus);
-    setGender(Secret);
+    setMessageCount(0);
 }
 
 QString UQQMember::uin() const {
@@ -43,14 +40,20 @@ QString UQQMember::markname() const {
     return m_markname;
 }
 void UQQMember::setMarkname(QString markname) {
-    m_markname = markname;
+    if (m_markname != markname) {
+        m_markname = markname;
+        emit marknameChanged();
+    }
 }
 
 QString UQQMember::nickname() const {
     return m_nickname;
 }
 void UQQMember::setNickname(const QString &nickname) {
-    m_nickname = nickname;
+    if (m_nickname != nickname) {
+        m_nickname = nickname;
+        emit nicknameChanged();
+    }
 }
 
 QString UQQMember::longnick() const {
@@ -144,163 +147,13 @@ void UQQMember::setLevelRemainDays(int remainDays) {
     }
 }
 
-QString UQQMember::birthday() const {
-    return m_birthday;
+UQQMemberDetail *UQQMember::detail() const {
+    return m_detail;
 }
-void UQQMember::setBirthday(const QString &birthday) {
-    if (birthday != m_birthday) {
-        m_birthday = birthday;
-        emit birthdayChanged();
-    }
-}
-
-QString UQQMember::occupation() const {
-    return m_occupation;
-}
-void UQQMember::setOccupation(const QString &occupation) {
-    if (m_occupation != occupation) {
-        m_occupation = occupation;
-        emit occupationChanged();
-    }
-}
-
-QString UQQMember::phone() const {
-    return m_phone;
-}
-void UQQMember::setPhone(const QString &phone) {
-    if (m_phone != phone) {
-        m_phone = phone;
-        emit phoneChanged();
-    }
-}
-
-QString UQQMember::mobile() const {
-    return m_mobile;
-}
-void UQQMember::setMobile(const QString &mobile) {
-    if (m_mobile != mobile) {
-        m_mobile = mobile;
-        emit mobileChanged();
-    }
-}
-
-bool UQQMember::allow() const {
-    return m_allow;
-}
-void UQQMember::setAllow(bool allow) {
-    if (m_allow != allow) {
-        m_allow = allow;
-        emit allowChanged();
-    }
-}
-
-QString UQQMember::college() const {
-    return m_college;
-}
-void UQQMember::setCollege(const QString &college) {
-    if (m_college != college) {
-        m_college = college;
-        emit collegeChanged();
-    }
-}
-
-int UQQMember::shengxiao() const {
-    return m_shengxiao;
-}
-void UQQMember::setShengxiao(int shengxiao) {
-    if (m_shengxiao != shengxiao) {
-        m_shengxiao = shengxiao;
-        emit shengxiaoChanged();
-    }
-}
-
-int UQQMember::constel() const {
-    return m_constel;
-}
-void UQQMember::setConstel(int constel) {
-    if (m_constel != constel) {
-        m_constel = constel;
-        emit constelChanged();
-    }
-}
-
-int UQQMember::blood() const {
-    return m_blood;
-}
-void UQQMember::setBlood(int blood) {
-    if (m_blood != blood) {
-        m_blood = blood;
-        emit bloodChanged();
-    }
-}
-
-QString UQQMember::homepage() const {
-    return m_homepage;
-}
-void UQQMember::setHomepage(const QString &homepage) {
-    if (m_homepage != homepage) {
-        m_homepage = homepage;
-        emit homepageChanged();
-    }
-}
-
-QString UQQMember::country() const {
-    return m_country;
-}
-void UQQMember::setCountry(const QString &country) {
-    if (m_country != country) {
-        m_country = country;
-        emit countryChanged();
-    }
-}
-
-QString UQQMember::province() const {
-    return m_province;
-}
-void UQQMember::setProvince(const QString &province) {
-    if (m_province != province) {
-        m_province = province;
-        emit provinceChanged();
-    }
-}
-
-QString UQQMember::city() const {
-    return m_city;
-}
-void UQQMember::setCity(const QString &city) {
-    if (m_city != city) {
-        m_city = city;
-        emit cityChanged();
-    }
-}
-
-QString UQQMember::personal() const {
-    return m_personal;
-}
-void UQQMember::setPersonal(const QString &personal) {
-    if (m_personal != personal) {
-        m_personal = personal;
-        emit personalChanged();
-    }
-}
-
-QString UQQMember::email() const {
-    return m_email;
-}
-void UQQMember::setEmail(const QString &email) {
-    if (m_email != email) {
-        m_email = email;
-        emit emailChanged();
-    }
-}
-
-int UQQMember::gender() const {
-    return m_gender;
-}
-void UQQMember::setGender(int gender) {
-    if (m_gender != gender) {
-        m_gender = gender;
-        emit genderChanged();
+void UQQMember::setDetail(UQQMemberDetail *detail) {
+    if (detail != m_detail) {
+        m_detail = detail;
+        emit detailChanged();
     }
 }
 
@@ -325,14 +178,42 @@ UQQMember::Status UQQMember::statusIndex(const QString &s) {
     return si;
 }
 
-UQQMember::Gender UQQMember::genderIndex(const QString &s) {
-    Gender gender = Secret;
-    if (s == "male") {
-        gender = Male;
-    } else if (s == "female") {
-        gender = Female;
-    } else {
-        gender = Secret;
+void UQQMember::addMessage(UQQMessage *message) {
+    message->setName(markname() == "" ? nickname() : markname());
+    m_messages.append(message);
+
+    setMessageCount(messageCount() + 1);
+    emit messageReceived();
+}
+
+QList<QObject *> UQQMember::messages() {
+    QList<QObject *> messages;
+    for (int i = 0; i < m_messages.size(); i++)
+        messages.append(m_messages.at(i));
+
+    setMessageCount(0);
+    return messages;
+}
+
+QList<QObject *> UQQMember::newMessages() {
+    QList<QObject *> newMsgs;
+    if (messageCount() > 0) {
+        QList<UQQMessage *> messages = m_messages.mid(m_messages.count() - messageCount());
+        for (int i = 0; i < messages.count(); i++) {
+            newMsgs.append(messages.at(i));
+        }
     }
-    return gender;
+    setMessageCount(0);
+    return newMsgs;
+}
+
+int UQQMember::messageCount() const {
+    return m_messageCount;
+}
+
+void UQQMember::setMessageCount(int messageCount) {
+    if (m_messageCount != messageCount) {
+        m_messageCount = messageCount;
+        emit messageCountChanged();
+    }
 }

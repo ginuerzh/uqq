@@ -15,7 +15,7 @@ Item {
 
     ListItem.Standard {
         id: title
-        text: modelData.name + (index > 0 ? " [" + modelData.online + "/" + modelData.total + "]" : " [" + modelData.online + "]")
+        text: modelData.name + " [" + modelData.online + "/" + modelData.total + "]"
         selected:  category.state != ""
         clip: true
 
@@ -39,6 +39,6 @@ Item {
             bottom: parent.bottom
         }
         clip: true
-        delegate: Member {}
+        delegate: Member { width: parent.width }
     }
 }

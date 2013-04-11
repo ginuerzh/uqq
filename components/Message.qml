@@ -33,7 +33,7 @@ Item {
                 anchors.leftMargin: units.gu(1)
                 anchors.rightMargin: units.gu(1)
                 clip: true
-                spacing: units.gu(3)
+                spacing: units.gu(2)
 
                 model: msgModel
 
@@ -74,6 +74,7 @@ Item {
             TextField {
                 id: sendMsg
                 width: parent.width - sendBtn.width - units.gu(1)
+                Keys.onEnterPressed: send()
             }
             Button {
                 id: sendBtn
@@ -81,40 +82,8 @@ Item {
                 color: "orangered"
                 text: i18n.tr("发送")
 
-                onClicked: {
-                    QQ.Client.sendMessage(modelData.uin, sendMsg.text);
-                    msgModel.append(
-                                {
-                                    "name": "Gerry",
-                                    "time": Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss"),
-                                    "content": sendMsg.text
-                                }
-                               );
-                    sendMsg.text = "";
-                    msgView.positionViewAtEnd();
-                }
+                onClicked: send()
             }
-        }
-    }
-
-    function loadMessages() {
-        var msgs = modelData.messages();
-        for (var i = 0; i < msgs.length; i++) {
-            msgModel.append(
-                        {
-                            "name": msgs[i].name,
-                            "time": Qt.formatDateTime(msgs[i].time, "yyyy-MM-dd hh:mm:ss"),
-                            "content": msgs[i].content
-                        }
-                        );
-        }
-        msgView.positionViewAtEnd()
-    }
-
-    function onMessageReceived() {
-        //console.log("time:" + time + ", content:" + content)
-        if (message.state == "Message") {
-            loadMessages();
         }
     }
 
@@ -130,30 +99,55 @@ Item {
     transitions: [
         Transition {
             from: ""
-            to: "Message"
             SequentialAnimation {
                 NumberAnimation {
                     properties: "height"
                 }
                 ScriptAction {
                     script: {
-                        loadMessages();
+                        loadMessages(modelData.messages());
                         modelData.messageReceived.connect(onMessageReceived);
                     }
                 }
             }
         },
         Transition {
-            from: "Message"
             to: ""
-            NumberAnimation {
-                properties: "height"
-            }
-            ScriptAction {
-                script: {
-                    modelData.messageReceived.disconnect(onMessageReceived);
+            SequentialAnimation {
+                NumberAnimation {
+                    properties: "height"
+                }
+                ScriptAction {
+                    script: {
+                        modelData.messageReceived.disconnect(onMessageReceived);
+                    }
                 }
             }
         }
     ]
+
+    function send() {
+        QQ.Client.sendMessage(modelData.uin, sendMsg.text);
+        sendMsg.text = "";
+    }
+
+    function loadMessages(msgs) {
+        for (var i = 0; i < msgs.length; i++) {
+            msgModel.append(
+                        {
+                            "name": msgs[i].name,
+                            "time": Qt.formatDateTime(msgs[i].time, "yyyy-MM-dd hh:mm:ss"),
+                            "content": msgs[i].content
+                        }
+            );
+        }
+        msgView.positionViewAtEnd()
+    }
+
+    function onMessageReceived() {
+        //console.log("time:" + time + ", content:" + content)
+        if (message.state == "Message") {
+            loadMessages(modelData.newMessages());
+        }
+    }
 }
