@@ -168,8 +168,7 @@ QList<QObject *> UQQCategory::messages() {
     QList<QObject *> messages;
     UQQMessage *msg;
     UQQMember *member;
-    for (int i = 0; i < m_messages.size(); i++) {
-        msg = m_messages.at(i);
+    foreach (msg, m_messages) {
         member = this->member(msg->src());
         Q_CHECK_PTR(member);
         if (member)
@@ -188,8 +187,7 @@ QList<QObject *> UQQCategory::newMessages() {
 
     if (messageCount() > 0) {
         QList<UQQMessage *> messages = m_messages.mid(m_messages.count() - messageCount());
-        for (int i = 0; i < messages.count(); i++) {
-            msg = m_messages.at(i);
+        foreach (msg, messages) {
             member = this->member(msg->src());
             Q_CHECK_PTR(member);
             if (member)

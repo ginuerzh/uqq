@@ -43,10 +43,10 @@ Rectangle {
             onIconClicked: {
                 if (member.state != "Message") {
                     member.state = "Message";
-                    title.lnickExpanded = true;
+                    //title.lnickExpanded = true;
                 } else {
                     member.state = "";
-                    title.lnickExpanded = false;
+                    //title.lnickExpanded = false;
                 }
             }
         }

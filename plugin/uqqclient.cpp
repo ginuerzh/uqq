@@ -129,7 +129,7 @@ void UQQClient::checkCode(QString uin) {
     // for test
     TEST(testCheckCode(uin))
     /*
-     * this doesn't work :(, the package will be sent twice, I don't why???
+     * this doesn't work :(, the package will be sent twice, I don't know why???
      *
     QUrlQuery query;
     query.setQuery("http://check.ptlogin2.qq.com/check");
@@ -868,7 +868,6 @@ void UQQClient::testSendBuddyMessage(QString dstUin, QString content) {
 
     UQQMember *user = m_contact->member(fromUin);
     Q_CHECK_PTR(user);
-    //qDebug() << "sender" << fromUin << "name:" << user->detail()->nickname();
     message->setName(user->detail()->nickname());
     member->addMessage(message);
 }
@@ -943,7 +942,6 @@ void UQQClient::testSendGroupMessage(quint64 gid, QString content) {
     message->setDst(QString::number(gid));
     message->setContent(content);
     message->setTime(QDateTime::currentDateTime());
-    qDebug() << "test send group message:" << content;
     group->addMessage(message);
 }
 
