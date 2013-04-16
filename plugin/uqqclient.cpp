@@ -280,6 +280,7 @@ void UQQClient::verifyLogin(const QByteArray &data) {
 void UQQClient::secondLogin() {
     QString url = "http://d.web2.qq.com/channel/login2";
     QString ptwebqq = getCookie("ptwebqq", QUrl(url));
+    addLoginInfo("ptwebqq", ptwebqq);
     QString data = QString("r={\"status\":\"%1\",\"ptwebqq\":\"%2\",\"passwd_sig\":\"\",\"clientid\":\"%3\",\"psessionid\":null}"
             "&clientid=%4&psessionid=null")
             .arg(getLoginInfo("status").toString(),
@@ -639,6 +640,53 @@ void UQQClient::testLoadContact() {
     parseContact(data);
 }
 
+
+QString UQQClient::hashFriends(char *uin, char *ptwebqq) {
+    int alen= strlen(uin);
+    int *c = (int *)malloc(sizeof(int)*strlen(uin));
+    int d,b,k,clen;
+    int elen=strlen(ptwebqq);
+    char* e = ptwebqq;
+    int h;
+    int i;
+    for(d=0;d<alen;d++){
+        c[d]=uin[d]-'0';
+    }
+    //qDebug() << uin << ptwebqq;
+    clen = d;
+    for(b=0,k=-1,d=0;d<clen;d++){
+        b += c[d];
+        b %= elen;
+        int f = 0;
+        if(b+4>elen){
+            int g;
+            for(g=4+b-elen,h=0;h<4;h++)
+                f |= h<g?((e[b+h]&255)<<(3-h)*8):((e[h-g]&255)<<(3-h)*8);
+        }else{
+            for(h=0;h<4;h++)
+                f |= (e[b+h]&255)<<(3-h)*8;
+        }
+        k ^= f;
+    }
+    memset(c,0,sizeof(int)*alen);
+    c[0] = k >> 24&255;
+    c[1] = k >> 16&255;
+    c[2] = k >> 8&255;
+    c[3] = k & 255;
+    char* ch = QString("0123456789ABCDEF").toLatin1().data();
+    char* ret = (char *)malloc(10);
+    memset(ret,0,10);
+    for(b=0,i=0;b<4;b++){
+        ret[i++]=ch[c[b]>>4&15];
+        ret[i++]=ch[c[b]&15];
+    }
+    QString result(ret);
+    //qDebug() << "result" << ret;
+    free(c);
+    free(ret);
+    return result;
+}
+
 void UQQClient::loadContact() {
     //~ for test
     TEST(testLoadContact())
@@ -647,6 +695,7 @@ void UQQClient::loadContact() {
     QString url = QString("http://s.web2.qq.com/api/get_user_friends2");
 
     param.insert("h", "hello");
+    param.insert("hash", hashFriends(getLoginInfo("uin").toString().toLatin1().data(), getLoginInfo("ptwebqq").toString().toLatin1().data()));
     param.insert("vfwebqq", getLoginInfo("vfwebqq"));
     QJsonDocument doc;
     doc.setObject(QJsonObject::fromVariantMap(param));
@@ -1108,7 +1157,7 @@ void UQQClient::pollGroupMessage(const QVariantMap &m) {
     message->setId(m.value("msg_id").toInt());
     message->setId2(m.value("msg_id2").toInt());
     message->setType(m.value("msg_type").toInt());
-    message->setSrc(m.value("from_uin").toString());
+    message->setSrc(m.value("send_uin").toString());
     message->setDst(m.value("to_uin").toString());
 
     QDateTime datetime =
@@ -1121,7 +1170,7 @@ void UQQClient::pollGroupMessage(const QVariantMap &m) {
     for (int i = 0; i < list.size(); i++) {
         content.append(list.at(i).toString());
     }
-    qDebug() << "receive group message:" << content;
+    //qDebug() << "receive group message:" << content;
     message->setContent(content);
     group->addMessage(message);
 

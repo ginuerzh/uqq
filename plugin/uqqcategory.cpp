@@ -155,7 +155,6 @@ void UQQCategory::decOnline() {
         setOnline(online() - 1);
 }
 
-
 void UQQCategory::addMessage(UQQMessage *message) {
     Q_CHECK_PTR(message);
     m_messages.append(message);

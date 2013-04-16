@@ -152,6 +152,8 @@ private:
     void testLoadGroups();
     void testLoadGroupInfo(quint64 gid);
 
+    QString hashFriends(char *uin, char *ptwebqq);
+
 signals:
     void errorChanged(int errCode);
     void captchaChanged(bool needed);
