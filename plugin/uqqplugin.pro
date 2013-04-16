@@ -15,7 +15,9 @@ SOURCES += uqqclient.cpp \
     uqqmember.cpp \
     uqqcategory.cpp \
     uqqmessage.cpp \
-    uqqmemberdetail.cpp
+    uqqmemberdetail.cpp \
+    uqqgroup.cpp \
+    uqqgroupinfo.cpp
 
 HEADERS += uqqclient.h \
            uqqplugin.h \
@@ -23,7 +25,9 @@ HEADERS += uqqclient.h \
     uqqmember.h \
     uqqcategory.h \
     uqqmessage.h \
-    uqqmemberdetail.h
+    uqqmemberdetail.h \
+    uqqgroup.h \
+    uqqgroupinfo.h
 
 OTHER_FILES += \
     loginSuccess.txt

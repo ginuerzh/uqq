@@ -6,32 +6,41 @@ import UQQ 1.0 as QQ
 Item {
     id: message
 
+    property bool loadMsg: false
+
+    signal sendClicked(string content)
+
+    onLoadMsgChanged: {
+        if (loadMsg) {
+            loadMessages(modelData.messages());
+            //modelData.messageReceived.connect(onMessageReceived);
+        }
+    }
+
+    Connections {
+        target: modelData
+        onMessageReceived: {
+            loadMessages(modelData.newMessages());
+        }
+    }
+
     ListModel {
         id: msgModel
     }
-
-    state: showMsg ? "Message" : ""
 
     Column {
         anchors.fill: parent
         spacing: units.gu(1)
 
-        Detail {
-            id: detail
-            width: parent.width
-            height: units.gu(23)
-        }
-
         UbuntuShape {
             color: "white"
             width: parent.width
-            height: parent.height - detail.height - sendArea.height - units.gu(5)
+            height: parent.height - sendArea.height - parent.spacing
 
             ListView {
                 id: msgView
                 anchors.fill: parent
                 anchors.leftMargin: units.gu(1)
-                anchors.rightMargin: units.gu(1)
                 clip: true
                 spacing: units.gu(2)
 
@@ -45,6 +54,7 @@ Item {
 
                     Label {
                         text: name + "  " + time
+                        color: isSend ? "blue" : "green"
                     }
                     Item {
                         width: parent.width
@@ -63,6 +73,10 @@ Item {
                         }
                     }
                 }
+
+                Scrollbar {
+                    flickableItem: msgView
+                }
             }
         }
 
@@ -74,7 +88,6 @@ Item {
             TextField {
                 id: sendMsg
                 width: parent.width - sendBtn.width - units.gu(1)
-                Keys.onEnterPressed: send()
             }
             Button {
                 id: sendBtn
@@ -82,53 +95,18 @@ Item {
                 color: "orangered"
                 text: i18n.tr("发送")
 
-                onClicked: send()
+                onClicked: {
+                    message.sendClicked(sendMsg.text);
+                    sendMsg.text = "";
+                }
             }
         }
     }
 
-    states: [
-        State {
-            name: "Message"
-            PropertyChanges {
-                target: detail
-                height: units.gu(7.5)
-            }
-        }
-    ]
-    transitions: [
-        Transition {
-            from: ""
-            SequentialAnimation {
-                NumberAnimation {
-                    properties: "height"
-                }
-                ScriptAction {
-                    script: {
-                        loadMessages(modelData.messages());
-                        modelData.messageReceived.connect(onMessageReceived);
-                    }
-                }
-            }
-        },
-        Transition {
-            to: ""
-            SequentialAnimation {
-                NumberAnimation {
-                    properties: "height"
-                }
-                ScriptAction {
-                    script: {
-                        modelData.messageReceived.disconnect(onMessageReceived);
-                    }
-                }
-            }
-        }
-    ]
-
-    function send() {
-        QQ.Client.sendMessage(modelData.uin, sendMsg.text);
-        sendMsg.text = "";
+    Component.onCompleted: {
+    }
+    Component.onDestruction: {
+        //modelData.messageReceived.disconnect(onMessageReceived);
     }
 
     function loadMessages(msgs) {
@@ -137,17 +115,11 @@ Item {
                         {
                             "name": msgs[i].name,
                             "time": Qt.formatDateTime(msgs[i].time, "yyyy-MM-dd hh:mm:ss"),
-                            "content": msgs[i].content
+                            "content": msgs[i].content,
+                            "isSend": msgs[i].type === -1 ? true : false
                         }
-            );
+                        );
         }
         msgView.positionViewAtEnd()
-    }
-
-    function onMessageReceived() {
-        //console.log("time:" + time + ", content:" + content)
-        if (message.state == "Message") {
-            loadMessages(modelData.newMessages());
-        }
     }
 }

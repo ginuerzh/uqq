@@ -24,11 +24,29 @@ Item {
     property bool showMessageCount: false
     property bool showNickname: false
     property int status: 0
+    property bool lnickExpanded: false
+    property int longnickLineCount: 1
+    property int minHeight: units.gu(5.5)
+    property bool isVip: false
 
     signal iconClicked
     signal clicked
+    clip: true
 
-    height: units.gu(5.5)
+    height: minHeight
+
+    onLnickExpandedChanged: {
+        if (lnickExpanded) {
+            longnickLineCount = 3;
+            height = Qt.binding(function() { return info.height })
+        } else {
+            height = minHeight;
+        }
+    }
+
+    Behavior on height {
+        NumberAnimation {}
+    }
 
     UbuntuShape {
         id: face
@@ -46,7 +64,7 @@ Item {
             height: width
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            source: title.statusIcons[title.status]
+            source: title.status < title.statusIcons.length ? title.statusIcons[title.status] : ""
         }
 
         MouseArea {
@@ -67,10 +85,15 @@ Item {
         Row {
             Label {
                 text: markname == "" ? nickname : markname
+                color: isVip ? "red" : nickLabel.color
             }
             Label {
-                visible: showNickname
+                id: nickLabel
+                opacity: showNickname ? 1 : 0
                 text: markname == "" ? "" : "(" + nickname + ")"
+                Behavior on opacity {
+                    NumberAnimation {}
+                }
             }
         }
         Label {
@@ -78,7 +101,7 @@ Item {
             text: longnick == "" ? " " : longnick
             wrapMode: Text.Wrap
             elide: Text.ElideRight
-            maximumLineCount: 1
+            maximumLineCount: longnickLineCount
         }
     }
 

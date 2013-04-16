@@ -42,12 +42,23 @@ MainView {
 
         // Second tab begins here
         Tab {
-            objectName: "friends"
-            iconSource: Qt.resolvedUrl("friend.png")
+            objectName: "contact"
+            iconSource: "friend.png"
             title: i18n.tr("联系人")
 
             // Tab content begins here
             page: Contact {
+                anchors.fill: parent
+                anchors.topMargin: units.gu(9.5)
+            }
+        }
+
+        Tab {
+            objectName: "groups"
+            iconSource: "group.png"
+            title: i18n.tr("QQ群")
+
+            page: Group {
                 anchors.fill: parent
                 anchors.topMargin: units.gu(9.5)
             }

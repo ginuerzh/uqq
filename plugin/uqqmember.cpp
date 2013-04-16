@@ -5,11 +5,13 @@ UQQMember::UQQMember(int category, const QString &uin, QObject *parent) :
 {
     setDetail(Q_NULLPTR);
     setAccount("0");
+    setLevel(0);
     setVip(false);
     setVipLevel(0);
     setClientType(0);
     setStatus(OfflineStatus);
     setMessageCount(0);
+    setFlag(0);
 }
 
 QString UQQMember::uin() const {
@@ -107,6 +109,13 @@ void UQQMember::setClientType(int clientType) {
     m_clientType = clientType;
 }
 
+int UQQMember::flag() const {
+    return m_flag;
+}
+void UQQMember::setFlag(int flag) {
+    m_flag = flag;
+}
+
 int UQQMember::level() const {
     return m_level;
 }
@@ -179,7 +188,6 @@ UQQMember::Status UQQMember::statusIndex(const QString &s) {
 }
 
 void UQQMember::addMessage(UQQMessage *message) {
-    message->setName(markname() == "" ? nickname() : markname());
     m_messages.append(message);
 
     setMessageCount(messageCount() + 1);

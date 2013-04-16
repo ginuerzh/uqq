@@ -3,6 +3,9 @@
 
 #include <QtNetwork>
 #include "uqqcontact.h"
+#include "uqqgroup.h"
+
+#define TYPE_SEND -1
 
 class UQQClient : public QObject {
 
@@ -13,18 +16,24 @@ public:
         CheckCodeAction,
         GetCaptchaAction,
         LoginAction,
+        LogoutAction,
         SecondLoginAction,
 
         // After login
         GetLongNickAction = 10,
-        GetAccountAction,
+        GetMemberAccountAction,
+        GetGroupAccountAction,
         GetMemberLevelAction,
         GetMemberInfoAction,
         GetUserFaceAction,
         LoadContactAction,
         GetOnlineBuddiesAction,
         PollMessageAction,
-        SendMessageAction
+        SendBuddyMessageAction,
+        SendGroupMessageAction,
+        ChangeStatusAction,
+        LoadGroupsAction,
+        LoadGroupInfoAction
     };
 
     enum Error {
@@ -49,17 +58,23 @@ public:
     Q_INVOKABLE QVariant getUserInfo(const QString key) const;
 
     Q_INVOKABLE void checkCode(QString uin);
-    Q_INVOKABLE void login(QString uin, QString pwd, QString vc);
+    Q_INVOKABLE void login(QString uin, QString pwd, QString vc, QString status = "online");
+    Q_INVOKABLE void logout();
     Q_INVOKABLE void getMemberDetail(QString uin);
     Q_INVOKABLE void loadContact();
-    Q_INVOKABLE QList<QObject *> getCategories();
-    Q_INVOKABLE QList<QObject *> getCategoryMembers(int category);
+    Q_INVOKABLE QList<QObject *> getContactList();
+    Q_INVOKABLE QList<QObject *> getGroupList();
+    Q_INVOKABLE QList<QObject *> getCategoryMembers(quint64 catid);
+    Q_INVOKABLE QList<QObject *> getGroupMembers(quint64 gid);
     Q_INVOKABLE QList<QObject *> getMember(QString uin);
     Q_INVOKABLE void loadInfoInCategory(int category);
     Q_INVOKABLE void getMemberFace(QString uin);
     Q_INVOKABLE void getOnlineBuddies();
     Q_INVOKABLE void poll();
-    Q_INVOKABLE void sendMessage(QString dstUin, QString content);
+    Q_INVOKABLE void sendBuddyMessage(QString dstUin, QString content);
+    Q_INVOKABLE void sendGroupMessage(quint64 gid, QString content);
+    Q_INVOKABLE void changeStatus(QString status);
+    Q_INVOKABLE void loadGroupInfo(quint64 gid);
 
 private:
     void initConfig();
@@ -81,14 +96,23 @@ private:
     void parseMemberInfo(const QString &uin, const QByteArray &data);
     void getUserFace();
     void getMemberAccount(const QString &uin);
-    void parseAccount(const QString &uin, const QByteArray &data);
+    void getGroupAccount(const QString &uin);
+    void getAccount(const QString &uin, Action action);
+    void parseAccount(const QString &uin, const QByteArray &data, Action action);
     void getFace(const QString &uin, int cache = 0, int type = 1);
     void saveFace(const QString &uin, const QByteArray &data);
     void parseContact(const QByteArray &data);
     void parseOnlineBuddies(const QByteArray &data);
 
-    QString sendMessageData(QString dstUin, QString content);
+    void loadGroups();
+    void parseGroups(const QByteArray &data);
+    void parseGroupInfo(quint64 gid, const QByteArray &data);
+
+    QString buddyMessageData(QString dstUin, QString content);
+    QString groupMessageData(QString groupUin, QString content);
     void parseSendMessage(const QString &uin, const QByteArray &data);
+
+    void parseChangeStatus(const QString &status, const QByteArray &data);
 
     int parseParamList(const QString &data, QStringList &paramList);
     QString getCookie(const QString &name, QUrl url) const;
@@ -102,9 +126,12 @@ private:
     void onLoginSuccess(const QString &uin, const QString &status);
 
     void parsePoll(const QByteArray &data);
-    void pollStatusChanged(QVariantMap m);
-    void pollMemberMessage(QVariantMap m);
-    void pollKickMessage(QVariantMap m);
+    void pollStatusChanged(const QVariantMap &m);
+    void pollMemberMessage(const QVariantMap &m);
+    void pollGroupMessage(const QVariantMap &m);
+    void pollKickMessage(const QVariantMap &m);
+
+    void parseLogout(const QByteArray &data);
 
 
     // for test
@@ -112,26 +139,31 @@ private:
     void testGetCaptcha();
     void testLoadContact();
     void testGetOnlineBuddies();
-    void testLogin(const QString &pwd, const QString &vc);
+    void testLogin(const QString &pwd, const QString &vc, const QString &status);
     void testGetFace(const QString &uin);
-    void testGetMemberAccount(const QString &uin);
+    void testGetAccount(const QString &uin, Action action);
     void testGetMemberLevel(const QString &uin);
     void testGetLongNick(const QString &uin);
     void testGetMemberInfo(const QString &uin);
-    void testLoadInfoCategory(int category);
     void testPoll();
-    void testSendMessage(QString dstUin, QString content);
+    void testSendBuddyMessage(QString dstUin, QString content);
+    void testSendGroupMessage(quint64 gid, QString content);
+    void testChangeStatus(const QString &status);
+    void testLoadGroups();
+    void testLoadGroupInfo(quint64 gid);
 
 signals:
     void errorChanged(int errCode);
     void captchaChanged(bool needed);
     void loginSuccess();
-    void categoryReady();
+    void contactReady();
+    void groupReady(quint64 gid);
     void onlineStatusChanged();
     void buddyStatusChanged(int cat, QString uin);
 
     void pollReceived();
-
+    void memberMessageReceived(int catid);
+    void groupMessageReceived(quint64 gid);
 
 
 public slots:
@@ -143,9 +175,7 @@ private:
     QNetworkAccessManager *m_manager;
 
     UQQContact *m_contact;
-
-    int m_errCode;
-    bool m_captcha;
+    UQQGroup *m_group;
 };
 
 #endif // UQQCLIENT_H

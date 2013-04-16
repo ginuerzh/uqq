@@ -4,58 +4,100 @@
 #include <QObject>
 #include <QList>
 #include "uqqmember.h"
+#include "uqqgroupinfo.h"
 
 class UQQCategory : public QObject
 {
     Q_OBJECT
 public:
 
-    enum Category {
-        BuddyCategory,
-        //OnlineCategory = 0xF000,
-        IllegalCategory = 0xFFFF
+    enum CategoryId {
+        BuddyCategoryId,
+        IllegalCategoryId = 0xFFFF
     };
 
 
+    Q_PROPERTY(quint64 account READ account NOTIFY accountChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
+    Q_PROPERTY(QString markname READ markname NOTIFY marknameChanged)
     Q_PROPERTY(int online READ online NOTIFY onlineChanged)
     Q_PROPERTY(int total READ total NOTIFY totalChanged)
-    Q_PROPERTY(int catIndex READ catIndex NOTIFY catIndexChanged)
+    Q_PROPERTY(quint64 id READ id NOTIFY idChanged)
+    Q_PROPERTY(UQQGroupInfo *groupInfo READ groupInfo NOTIFY groupInfoChanged)
+    Q_PROPERTY(int messageCount READ messageCount NOTIFY messageCountChanged)
+    Q_PROPERTY(bool groupReady READ groupReady NOTIFY groupReadyChanged)
 
     explicit UQQCategory(QObject *parent = 0);
     
+    quint64 account() const;
+    void setAccount(quint64 uin);
     QString name() const;
     void setName(const QString &name);
+    QString markname() const;
+    void setMarkname(const QString &markname);
     int online() const;
     void setOnline(int online);
     int total() const;
-    int catIndex() const;
-    void setCatIndex(int index);
+    quint64 id() const;
+    void setId(quint64 id);
+    quint32 flag() const;
+    void setFlag(quint32 flag);
+    quint64 code() const;
+    void setCode(quint64 code);
+
+    UQQGroupInfo *groupInfo() const;
+    void setGroupInfo(UQQGroupInfo *groupInfo);
+
+    bool groupReady() const;
+    void setGroupReady(bool groupReady);
 
     //void setMembers(const QList<UQQMember *> &members);
-    QList<QObject *> &members();
-    void addMember(QObject *member);
-    bool removeMember(UQQMember *member);
-    bool removeMemberAt(int index);
-    int hasMember(const QString &uin);
-    void sort();
+    QList<UQQMember *> members();
+    UQQMember *member(const QString &uin);
+    QList<UQQMember *> sortedMembers();
+    void addMember(UQQMember *member);
+    int removeMember(UQQMember *member);
+    bool hasMember(const QString &uin);
 
     void incOnline();
     void decOnline();
+
+    int messageCount() const;
+    void setMessageCount(int messageCount);
+
+    void addMessage(UQQMessage *message);
+    Q_INVOKABLE QList<QObject *> messages();
+    Q_INVOKABLE QList<QObject *> newMessages();
+
 signals:
+    void accountChanged();
     void nameChanged();
+    void marknameChanged();
     void onlineChanged();
     void totalChanged();
-    void catIndexChanged();
-    
+    void idChanged();
+    void groupInfoChanged();
+
+    void messageCountChanged();
+    void messageReceived();
+    void groupReadyChanged();
+
 public slots:
 
 private:
+    quint64 m_account;
+    quint64 m_id;
     QString m_name;
+    QString m_markname;
+    quint32 m_flag;
+    quint64 m_code;
     int m_online;
-    int m_catIndex;
+    bool m_groupReady;
 
-    QList<QObject *> m_members;
+    QHash<QString, UQQMember*> m_members;
+    UQQGroupInfo *m_groupInfo;
+    QList<UQQMessage *> m_messages;
+    int m_messageCount;
 };
 
 #endif // CATEGORY_H

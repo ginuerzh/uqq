@@ -8,10 +8,16 @@ class UQQMessage : public QObject
 {
     Q_OBJECT
 public:
+    enum MessageType {
+        TypeSend = 0x1000
+    };
+
+
     Q_PROPERTY(QString src READ src)
     Q_PROPERTY(QString name READ name)
     Q_PROPERTY(QDateTime time READ time)
     Q_PROPERTY(QString content READ content)
+    Q_PROPERTY(int type READ type)
 
     explicit UQQMessage(QObject *parent = 0);
 

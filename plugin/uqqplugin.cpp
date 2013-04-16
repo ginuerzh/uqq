@@ -2,6 +2,7 @@
 #include "uqqclient.h"
 #include "uqqcontact.h"
 #include "uqqmemberdetail.h"
+#include "uqqgroupinfo.h"
 
 #include <QtQml>
 
@@ -20,4 +21,5 @@ void UQQPlugin::registerTypes(const char *uri)
     // @uri UQQ
     qmlRegisterSingletonType<UQQClient>(uri, 1, 0, "Client", clientPorviderCallback);
     qmlRegisterType<UQQMemberDetail>(uri, 1, 0, "MemberDetail");
+    qmlRegisterType<UQQGroupInfo>(uri, 1, 0, "GroupInfo");
 }

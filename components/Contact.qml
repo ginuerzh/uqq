@@ -18,48 +18,33 @@ Item {
             Repeater {
                 id: categories
 
-                model: QQ.Client.getCategories()
+                model: QQ.Client.getContactList()
 
                 Category {
                     id: category
-                    width: parent.width
+
                     property bool loaded: false
 
-                    model: QQ.Client.getCategoryMembers(modelData.catIndex);
+                    width: parent.width
+                    maxHeight: contact.height
+                    model: QQ.Client.getCategoryMembers(modelData.id);
+
+                    title: modelData.name + " [" + modelData.online + "/" + modelData.total + "]"
+
+                    Connections {
+                        target: QQ.Client
+                        onMemberMessageReceived: {
+                            if (catid == modelData.id && category.state == "")
+                                    category.newMsg = true;
+                        }
+                    }
 
                     onClicked: {
                         if (!loaded) {
                             loaded = true;
-                            QQ.Client.loadInfoInCategory(modelData.catIndex);
-                        }
-
-                        if (category.state == "" && category.model.length > 0) {
-                            category.state = "Expand"
-                        } else {
-                            category.state = ""
+                            QQ.Client.loadInfoInCategory(modelData.id);
                         }
                     }
-                    states: State {
-                        name: "Expand"
-
-                        PropertyChanges {
-                            target: category
-                            height: contact.height
-                            rotation: 90
-                        }
-                        PropertyChanges {
-                            target: flick
-                            explicit: true
-                            contentY: category.y
-                            interactive: false
-                        }
-                    }
-
-                    transitions: [
-                        Transition {
-                            NumberAnimation { properties: "height,contentY,rotation,opacity" }
-                        }
-                    ]
                 }
             }
         }

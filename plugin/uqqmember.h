@@ -67,6 +67,8 @@ public:
     void setStatus(int status);
     int clientType() const;
     void setClientType(int clientType);
+    int flag() const;
+    void setFlag(int flag);
 
     int level() const;
     void setLevel(int level);
@@ -99,6 +101,7 @@ private:
     bool m_vip;
     int m_vipLevel;
     int m_clientType;
+    int m_flag;
 
     int m_level;
     int m_levelDays;

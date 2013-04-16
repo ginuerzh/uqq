@@ -30,32 +30,66 @@ Rectangle {
             online: modelData.status !== 6
             showMessageCount: member.state != "Message" && modelData.messageCount > 0
             status: modelData.status
+            isVip: modelData.isVip
 
             onClicked: {
                 if (member.state == "") {
-                    member.state = "Detail"
+                    member.state = "Detail";
+                } else {
+                    member.state = "";
                 }
-                else
-                    member.state = ""
             }
 
             onIconClicked: {
                 if (member.state != "Message") {
-                    member.state = "Message"
+                    member.state = "Message";
+                    title.lnickExpanded = true;
+                } else {
+                    member.state = "";
+                    title.lnickExpanded = false;
                 }
-                else
-                    member.state = ""
             }
         }
 
         Loader {
-            id: msgLoader
+            id: detailLoader
 
-            property bool showMsg: false
+            property int minHeight: units.gu(5)
+            property int maxHeihgt: units.gu(23)
 
             width: parent.width
-            height: member.ListView.view.height - title.height
-            source: "Message.qml"
+            //height: maxHeihgt
+            sourceComponent: MemberDetail {
+                property bool expanded: false
+                onClicked: {
+                    if (msgLoader.active) {
+                        if (expanded) {
+                            detailLoader.height = detailLoader.minHeight;
+                        } else {
+                            detailLoader.height = detailLoader.maxHeihgt;
+                        }
+                        expanded = !expanded;
+                    }
+                }
+            }
+
+            Behavior on height {
+                NumberAnimation {}
+            }
+
+            active: false
+            opacity: 0
+        }
+
+        Loader {
+            id: msgLoader
+            width: parent.width
+            height: member.ListView.view.height - title.height - detailLoader.height - parent.spacing * 4
+            sourceComponent: Message {
+                loadMsg: true
+                onSendClicked: QQ.Client.sendBuddyMessage(modelData.uin, content);
+            }
+
             active: false
             opacity: 0
         }
@@ -68,22 +102,26 @@ Rectangle {
             name: "Detail"
 
             PropertyChanges {
+                target: detailLoader
+                active: true
+                height: maxHeihgt
+                opacity: 1
+            }
+            PropertyChanges {
                 target: member
-                height: title.height + units.gu(25)
+                height: title.height + detailLoader.height + units.gu(2)
             }
             PropertyChanges {
                 target: title
                 showNickname: true
             }
             PropertyChanges {
-                target: msgLoader
-                active: true
-                opacity: 1
+                target: title
+                lnickExpanded: true
             }
         },
         State {
             name: "Message"
-            extend: "Detail"
 
             PropertyChanges {
                 target: member
@@ -96,8 +134,23 @@ Rectangle {
                 interactive: false
             }
             PropertyChanges {
+                target: detailLoader
+                height: minHeight
+                active: true
+                opacity: 1
+            }
+            PropertyChanges {
                 target: msgLoader
-                showMsg: true
+                active: true
+                opacity: 1
+            }
+            PropertyChanges {
+                target: title
+                showNickname: true
+            }
+            PropertyChanges {
+                target: title
+                lnickExpanded: true
             }
         }
     ]
@@ -105,28 +158,47 @@ Rectangle {
     transitions: [
         Transition {
             from: ""
+            to: "*"
             SequentialAnimation {
                 ParallelAnimation {
                     NumberAnimation { properties: "contentY,height,opacity" }
                     ColorAnimation {}
                 }
-                ScriptAction { script: if (modelData.detail == null) QQ.Client.getMemberDetail(modelData.uin); }
+                ScriptAction {
+                    script: if (modelData.detail == null)
+                                QQ.Client.getMemberDetail(modelData.uin);
+                }
             }
         },
         Transition {
+            from: "*"
             to: ""
             SequentialAnimation {
                 ParallelAnimation {
                     NumberAnimation { properties: "contentY,height,opacity" }
                     ColorAnimation {}
                 }
-                PropertyAction { target: msgLoader; property: "active"; value: false }
+                PropertyAction {
+                    target: detailLoader
+                    property: "active"
+                    value: false
+                }
+                PropertyAction {
+                    target: msgLoader
+                    property: "active"
+                    value: false
+                }
+                PropertyAction {
+                    target: title
+                    property: "longnickLineCount"
+                    value: 1
+                }
             }
         },
         Transition {
             from: "Detail"
             to: "Message"
-            NumberAnimation { properties: "contentY,height" }
+            NumberAnimation { properties: "contentY,height,opacity" }
         }
     ]
 }

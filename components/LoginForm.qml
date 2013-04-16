@@ -1,5 +1,7 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
+import Ubuntu.Components.ListItems 0.1 as ListItem
+import Ubuntu.Components.Popups 0.1 as Popups
 import UQQ 1.0 as QQ
 import "md5.js" as MD5
 
@@ -12,8 +14,7 @@ Item {
         QQ.Client.captchaChanged.connect(onCaptchaChanged);
         QQ.Client.errorChanged.connect(onErrorChanged);
         QQ.Client.loginSuccess.connect(onLoginSuccess);
-
-        QQ.Client.categoryReady.connect(onCategoryReady);
+        QQ.Client.contactReady.connect(onContactReady);
     }
 
     Component.onDestruction: {
@@ -77,20 +78,67 @@ Item {
                 visible: false
                 cache: false
             }
-            ActivityIndicator {
-                id: indicator
+
+            StatusPopover {
+                id: statusPopover
+
+                onTriggered: {
+                    statusImg.source = source;
+                    statusTxt.text = text;
+                    statusPopover.status = status;
+                }
+            }
+
+            UbuntuShape {
+                id: statusButton
                 anchors.right: loginButton.left
-                anchors.rightMargin: units.gu(1)
+                anchors.rightMargin: units.gu(1.5)
+                anchors.verticalCenter: loginButton.verticalCenter
+                width: childrenRect.width
+                height: loginButton.height - units.gu(1)
+                color: "snow"
+                enabled: !indicator.running
+
+                Row {
+                    anchors {
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+                    spacing: units.gu(0.5)
+                    Image {
+                        id: statusImg
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: "../res/status/imonline.png"
+                    }
+                    Label {
+                        id: statusTxt
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "在线"
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        statusPopover.caller = statusButton;
+                        statusPopover.show();
+                    }
+                }
             }
 
             Button {
                 id: loginButton
                 anchors.right: parent.right
                 text: i18n.tr("登录")
+                enabled: !indicator.running
 
                 onClicked: {
-                    login(username.text, password.text, captcha.text);
+                    login(username.text, password.text, captcha.text, statusPopover.status);
                 }
+            }
+            ActivityIndicator {
+                id: indicator
+                anchors.centerIn: loginButton
             }
         }
     }
@@ -122,11 +170,11 @@ Item {
         QQ.Client.loadContact();
     }
 
-    function onCategoryReady() {
+    function onContactReady() {
         loader.source = "MainPage.qml";
     }
 
-    function login(uin, password, vc) {
+    function login(uin, password, vc, status) {
         var pwdMd5;
 
         if (uin.length === 0 || password.length === 0) {
@@ -146,6 +194,6 @@ Item {
         pwdMd5 = MD5.pwdMd5(uinHex, password, vc);
 
         indicator.running = true;
-        QQ.Client.login(uin, pwdMd5, vc);
+        QQ.Client.login(uin, pwdMd5, vc, status);
     }
 }

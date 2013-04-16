@@ -16,22 +16,23 @@ public:
     //static QString mapToJson(const QVariantMap &map);
     //static QString listToJson(const QVariantList &list);
 
-    void setDataMap(const QVariantMap &map);
+    void setContactData(const QVariantMap &map);
     void setOnlineBuddies(const QVariantList &list);
     QList<UQQCategory *> &categories();
-    UQQCategory * getCategory(int cat);
+    UQQCategory * getCategory(quint64 catid);
     QHash<QString, UQQMember*> &members();
     UQQMember *member(const QString &uin);
-    QList<QObject *> &membersInCategory(int category);
+    QList<UQQMember *> membersInCategory(quint64 catid, bool sorted = false);
     void addMember(UQQMember *member);
     void setBuddyStatus(QString uin, int status, int clientType);
+    void setMemberDetail(const QString &uin, const QVariantMap &m);
 
 private:
     void setCategories(const QVariantList &list);
     void setMembers(const QVariantList &list);
     void setMarknames(const QVariantList &list);
     void setVipInfo(const QVariantList &list);
-    void setInfo(const QVariantList &list);
+    void setNickname(const QVariantList &list);
     void setCategoryMembers();
     void addMemberToCategory(int category, UQQMember *member);
 signals:
