@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
+import QtMultimedia 5.0
 import UQQ 1.0 as QQ
 
 MainView {
@@ -15,16 +16,27 @@ MainView {
         running: true
         triggeredOnStart: true
         onTriggered: {
+            //console.log("poll timer triggered");
             QQ.Client.poll();
         }
+    }
 
-        Component.onCompleted: {
-            QQ.Client.pollReceived.connect(onPollReceived);
-        }
+    Audio {
+        id: newMsgAudio
+        source: "../res/sound/classic/msg.wav"
+    }
 
-        function onPollReceived() {
-            pollTimer.restart();    // ok, start the next poll request immediately
-        }
+    Audio {
+        id: onlineAudio
+        source: "../res/sound/classic/online.wav"
+    }
+
+    Connections {
+        target: QQ.Client
+        onMemberMessageReceived: newMsgAudio.play();
+        onGroupMessageReceived: newMsgAudio.play();
+        onPollReceived: pollTimer.restart();
+        onBuddyOnline: onlineAudio.play();
     }
 
     Tabs {

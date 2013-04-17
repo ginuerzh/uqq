@@ -5,6 +5,9 @@ import UQQ 1.0 as QQ
 
 Rectangle {
     id: member
+
+    property bool isGroupMember: false
+
     height: title.height + units.gu(2)
     clip: true
     color: "whitesmoke"
@@ -27,10 +30,12 @@ Rectangle {
             markname: modelData.markname
             nickname: modelData.nickname
             longnick: modelData.longnick
-            online: modelData.status !== 6
+            online: modelData.status !== QQ.Member.OfflineStatus
             showMessageCount: member.state != "Message" && modelData.messageCount > 0
             status: modelData.status
             isVip: modelData.isVip
+            client: modelData.clientType
+            inputNotify: modelData.inputNotify
 
             onClicked: {
                 if (member.state == "") {
@@ -41,12 +46,13 @@ Rectangle {
             }
 
             onIconClicked: {
+                if (modelData.uin == QQ.Client.getLoginInfo("uin"))
+                    return;
+
                 if (member.state != "Message") {
                     member.state = "Message";
-                    //title.lnickExpanded = true;
                 } else {
                     member.state = "";
-                    //title.lnickExpanded = false;
                 }
             }
         }
@@ -87,7 +93,12 @@ Rectangle {
             height: member.ListView.view.height - title.height - detailLoader.height - parent.spacing * 4
             sourceComponent: Message {
                 loadMsg: true
-                onSendClicked: QQ.Client.sendBuddyMessage(modelData.uin, content);
+                onSendClicked: {
+                    if (member.isGroupMember && modelData.groupSig.length > 0)
+                        QQ.Client.sendGroupSessionMessage(modelData.gid, modelData.uin, content);
+                    else
+                        QQ.Client.sendBuddyMessage(modelData.uin, content);
+                }
             }
 
             active: false
@@ -165,8 +176,12 @@ Rectangle {
                     ColorAnimation {}
                 }
                 ScriptAction {
-                    script: if (modelData.detail == null)
-                                QQ.Client.getMemberDetail(modelData.uin);
+                    script: {
+                        if (modelData.detail == null && !member.isGroupMember)
+                            QQ.Client.getMemberDetail(modelData.uin);
+                        if (member.isGroupMember && modelData.groupSig.length == 0)
+                            QQ.Client.getGroupSig(modelData.gid, modelData.uin);
+                    }
                 }
             }
         },

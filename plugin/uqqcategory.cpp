@@ -105,10 +105,19 @@ QList<UQQMember *> UQQCategory::members() {
 }
 
 UQQMember *UQQCategory::member(const QString &uin) {
-    return m_members.value(uin);
+    UQQMember *m = m_members.value(uin);
+    if (!m) {
+        qDebug() << "cat member" << uin << "not found!";
+    }
+    return m;
 }
 
 bool sortLessThan(UQQMember *m1, UQQMember *m2) {
+    if (m1->status() == UQQMember::OfflineStatus)
+        return false;
+    if (m2->status() == UQQMember::OfflineStatus)
+        return true;
+
     return m1->status() < m2->status();
 }
 

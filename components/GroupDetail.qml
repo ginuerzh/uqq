@@ -25,18 +25,6 @@ Item {
 
         Row {
             width: parent.width
-            spacing: units.gu(1)
-            Label {id: announce; text: i18n.tr("公 告:") }
-            Label {
-                width: parent.width - announce.width - parent.spacing
-                text: modelData.groupInfo ? modelData.groupInfo.memo : "-"
-                elide: Text.ElideRight
-                wrapMode: Text.Wrap
-            }
-        }
-
-        Row {
-            width: parent.width
 
             Field {
                 width: parent.width / 2
@@ -68,6 +56,18 @@ Item {
             width: parent.width
             label: i18n.tr("分 类:")
             value: modelData.groupInfo ? modelData.groupInfo.gclass : "-"
+        }
+
+        Row {
+            width: parent.width
+            spacing: units.gu(1)
+            Label {id: announce; text: i18n.tr("公 告:") }
+            Label {
+                width: parent.width - announce.width - parent.spacing
+                text: modelData.groupInfo ? modelData.groupInfo.memo : "-"
+                elide: Text.ElideRight
+                wrapMode: Text.Wrap
+            }
         }
 
         Row {

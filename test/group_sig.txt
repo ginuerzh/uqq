@@ -1,0 +1,1 @@
+{"retcode":0,"result":{"type":0,"value":"8209545df6611f540c0647d35cce41a86d5602efc45bbd6d2b3297640e2bdb0283af3f75269c6d73c99f9c6fc2727de3","flags":{"text":1,"pic":1,"file":1,"audio":1,"video":1}}}

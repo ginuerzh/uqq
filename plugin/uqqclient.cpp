@@ -98,11 +98,13 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         parsePoll(data);
         break;
     case SendBuddyMessageAction:
-        parseSendMessage(p.toString(), data);
+        parseMessage(p.toString(), data);
         break;
     case SendGroupMessageAction:
-        parseSendMessage(p.toString(), data);
+        parseMessage(p.toString(), data);
         break;
+    case SendGroupSessionMessageAction:
+        parseMessage(p.toString(), data);
     case ChangeStatusAction:
         parseChangeStatus(p.toString(), data);
         break;
@@ -111,6 +113,11 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         break;
     case LoadGroupInfoAction:
         parseGroupInfo(p.toULongLong(), data);
+        break;
+    case GetGroupSigAction:
+        parseGroupSig(reply->request().attribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1)).toULongLong(),
+                      p.toString(),
+                      data);
         break;
     default:
         qDebug() << "Unknown action:" << action;
@@ -892,7 +899,7 @@ QString UQQClient::buddyMessageData(QString dstUin, QString content) {
 QString UQQClient::groupMessageData(QString groupUin, QString content) {
     QVariantMap m;
 
-    QString p = QString("{\"group_uin\":%1,\"content\":\"[\\\"%3\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%4,\"clientid\":\"%5\",\"psessionid\":\"%6\"}");
+    QString p = QString("{\"group_uin\":%1,\"content\":\"[\\\"%2\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%3,\"clientid\":\"%4\",\"psessionid\":\"%5\"}");
     p = p.arg(groupUin,
               content,
               QString::number(getRandomInt(100000000)),
@@ -901,7 +908,7 @@ QString UQQClient::groupMessageData(QString groupUin, QString content) {
     return p;
 }
 
-void UQQClient::testSendBuddyMessage(QString dstUin, QString content) {
+void UQQClient::testSendBuddyMessage(QString dstUin, const QString &content) {
     QString p = "r=" + buddyMessageData(dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
     //qDebug() << p;
@@ -965,7 +972,7 @@ void UQQClient::sendBuddyMessage(QString dstUin, QString content) {
     member->addMessage(message);
 }
 
-void UQQClient::parseSendMessage(const QString &uin, const QByteArray &data) {
+void UQQClient::parseMessage(const QString &uin, const QByteArray &data) {
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
 
@@ -973,11 +980,11 @@ void UQQClient::parseSendMessage(const QString &uin, const QByteArray &data) {
     if (retcode == NoError) {
         qDebug() << "send to" << uin << "ok";
     } else {
-        qWarning() << "parseSendMessage:" << data;
+        qWarning() << "parseMessage:" << data;
     }
 }
 
-void UQQClient::testSendGroupMessage(quint64 gid, QString content) {
+void UQQClient::testSendGroupMessage(quint64 gid, const QString &content) {
     QString p = "r=" + groupMessageData(QString::number(gid), content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
     //qDebug() << p;
@@ -1024,12 +1031,141 @@ void UQQClient::sendGroupMessage(quint64 gid, QString content) {
     group->addMessage(message);
 }
 
-void UQQClient::testPoll() {
-    qDebug() << "test poll";
-    QFile file("test/groupmsg.txt");
+void UQQClient::testGetGroupSig(quint64 gid, const QString &dstUin) {
+    QFile file("test/group_sig.txt");
     file.open(QIODevice::ReadOnly);
     QByteArray data = file.readAll();
+    file.close();
+    //qDebug() << "test get group sig:" << gid << dstUin;
+    parseGroupSig(gid, dstUin, data);
+}
 
+void UQQClient::getGroupSig(quint64 gid, QString dstUin) {
+    TEST(testGetGroupSig(gid, dstUin))
+
+    QString url = QString("http://d.web2.qq.com/channel/get_c2cmsg_sig2?id=%1&to_uin=%2&service_type=0&clientid=%3&psessionid=%4&t=%5")
+            .arg(QString::number(gid),
+                 dstUin,
+                 getLoginInfo("clientid").toString(),
+                 getLoginInfo("psessionid").toString(),
+                 getTimestamp());
+    QNetworkRequest request;
+
+    request.setAttribute(QNetworkRequest::User, GetGroupSigAction);
+    request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
+    request.setAttribute(QNetworkRequest::UserMax, dstUin);
+    request.setUrl(QUrl(url));
+    request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
+    m_manager->get(request);
+}
+
+void UQQClient::parseGroupSig(quint64 gid, const QString &dstUin, const QByteArray &data) {
+    QJsonObject obj = QJsonDocument::fromJson(data).object();
+    QVariantMap m = obj.toVariantMap();
+
+    if (m.value("retcode", DefaultError).toInt() == NoError) {
+        m = m.value("result").toMap();
+
+        UQQCategory *group = m_group->getGroupById(gid);
+        Q_CHECK_PTR(group);
+        UQQMember *member = group->member(dstUin);
+        Q_CHECK_PTR(member);
+        member->setGroupSig(m.value("value").toString());
+        //qDebug() << "group sig:" << m.value("value").toString();
+    } else {
+        qDebug() << "parseGroupSig:" << data;
+    }
+}
+
+QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const QString &content) {
+    QVariantMap m;
+    QString p = QString("{\"to\":%1,\"group_sig\":\"%2\",\"face\":%3,\"service_type\":0,\"content\":\"[\\\"%4\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%5,\"clientid\":\"%6\",\"psessionid\":\"%7\"}");
+    UQQCategory *group = m_group->getGroupById(gid);
+    Q_CHECK_PTR(group);
+    UQQMember *member = group->member(dstUin);
+    Q_CHECK_PTR(member);
+    UQQMember *user = m_contact->member(getLoginInfo("uin").toString());
+    Q_CHECK_PTR(user);
+
+    p = p.arg(dstUin,
+              member->groupSig(),
+              QString::number(user->detail()->faceid()),
+              content,
+              QString::number(getRandomInt(100000000)),
+              getLoginInfo("clientid").toString(),
+              getLoginInfo("psessionid").toString());
+    return p;
+}
+
+void UQQClient::testSendGroupSessionMessage(quint64 gid, QString dstUin, QString content) {
+    QString p = "r=" + sessionMessageData(gid, dstUin, content);
+    p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
+    qDebug() << "group session message:" << p;
+
+    QString fromUin = getLoginInfo("uin").toString();
+    UQQCategory *group = m_group->getGroupById(gid);
+    Q_CHECK_PTR(group);
+    UQQMember *member = group->member(dstUin);
+    Q_CHECK_PTR(member);
+
+    UQQMessage *message = new UQQMessage(member);
+    message->setType(TYPE_SEND);
+    message->setSrc(fromUin);
+    message->setDst(dstUin);
+    message->setContent(content);
+    message->setTime(QDateTime::currentDateTime());
+
+    UQQMember *user = group->member(fromUin);
+    Q_CHECK_PTR(user);
+    message->setName(user->markname() == "" ? user->nickname() : user->markname());
+    member->addMessage(message);
+}
+
+void UQQClient::sendGroupSessionMessage(quint64 gid, QString dstUin, QString content) {
+    TEST(testSendGroupSessionMessage(gid, dstUin, content))
+
+    QString url = QString("http://d.web2.qq.com/channel/send_sess_msg2");
+    QString p = "r=" + sessionMessageData(gid, dstUin, content);
+    p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
+
+    QNetworkRequest request;
+
+    request.setAttribute(QNetworkRequest::User, SendGroupSessionMessageAction);
+    request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
+    request.setAttribute(QNetworkRequest::UserMax, dstUin);
+    request.setUrl(QUrl(url));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
+    m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
+
+    QString fromUin = getLoginInfo("uin").toString();
+    UQQCategory *group = m_group->getGroupById(gid);
+    Q_CHECK_PTR(group);
+    UQQMember *member = group->member(dstUin);
+    Q_CHECK_PTR(member);
+
+    UQQMessage *message = new UQQMessage(member);
+    message->setType(TYPE_SEND);
+    message->setSrc(fromUin);
+    message->setDst(dstUin);
+    message->setContent(content);
+    message->setTime(QDateTime::currentDateTime());
+
+    member->addMessage(message);
+}
+
+void UQQClient::testPoll() {
+    qDebug() << "test poll";
+    QFile file("test/hello_msg.txt");
+    file.open(QIODevice::ReadOnly);
+    QByteArray data = file.readAll();
+    file.close();
+    parsePoll(data);
+
+    file.setFileName("test/groupmsg.txt");
+    file.open(QIODevice::ReadOnly);
+    data = file.readAll();
+    file.close();
     parsePoll(data);
 }
 
@@ -1076,13 +1212,16 @@ void UQQClient::parsePoll(const QByteArray &data) {
             } else if (pollType == "message") {
                 pollMemberMessage(m);
             } else if (pollType == "kick_message") {
+                qDebug() << data;
                 pollKickMessage(m);
             } else if (pollType == "group_message") {
                 pollGroupMessage(m);
             } else if (pollType == "input_notify") {
-                qDebug() << data;
+                //qDebug() << data;
+                pollInputNotify(m);
             } else {
                 qWarning() << "Unknown poll type:" << pollType;
+                qDebug() << data;
             }
          }
 
@@ -1110,9 +1249,19 @@ void UQQClient::pollStatusChanged(const QVariantMap &m) {
     if (oldStatus != status || member->clientType() != clientType) {
         m_contact->setBuddyStatus(uin, status, clientType);
         if (oldStatus != status) {
-            emit buddyStatusChanged(member->category(), uin);
+            if (oldStatus == UQQMember::OfflineStatus)
+                emit buddyOnline(uin);
+            emit buddyStatusChanged(member->gid(), uin);
         }
     }
+}
+
+void UQQClient::pollInputNotify(const QVariantMap &m) {
+    QString fromUin = m.value("from_uin").toString();
+    UQQMember *member = m_contact->member(fromUin);
+    Q_CHECK_PTR(member);
+    if (member)
+        member->setInputNotify(true);
 }
 
 void UQQClient::pollMemberMessage(const QVariantMap &m) {
@@ -1142,8 +1291,9 @@ void UQQClient::pollMemberMessage(const QVariantMap &m) {
     message->setContent(content);
     message->setName(member->markname() == "" ? member->nickname() : member->nickname());
     member->addMessage(message);
+    member->setInputNotify(false);
 
-    emit memberMessageReceived(member->category());
+    emit memberMessageReceived(member->gid());
 }
 
 void UQQClient::pollGroupMessage(const QVariantMap &m) {

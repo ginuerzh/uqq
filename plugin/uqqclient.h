@@ -31,9 +31,11 @@ public:
         PollMessageAction,
         SendBuddyMessageAction,
         SendGroupMessageAction,
+        SendGroupSessionMessageAction,
         ChangeStatusAction,
         LoadGroupsAction,
-        LoadGroupInfoAction
+        LoadGroupInfoAction,
+        GetGroupSigAction
     };
 
     enum Error {
@@ -75,6 +77,8 @@ public:
     Q_INVOKABLE void sendGroupMessage(quint64 gid, QString content);
     Q_INVOKABLE void changeStatus(QString status);
     Q_INVOKABLE void loadGroupInfo(quint64 gid);
+    Q_INVOKABLE void getGroupSig(quint64 gid, QString dstUin);
+    Q_INVOKABLE void sendGroupSessionMessage(quint64 gid, QString dstUin, QString content);
 
 private:
     void initConfig();
@@ -110,9 +114,10 @@ private:
 
     QString buddyMessageData(QString dstUin, QString content);
     QString groupMessageData(QString groupUin, QString content);
-    void parseSendMessage(const QString &uin, const QByteArray &data);
-
+    QString sessionMessageData(quint64 gid, const QString &dstUin, const QString &content);
+    void parseMessage(const QString &uin, const QByteArray &data);
     void parseChangeStatus(const QString &status, const QByteArray &data);
+    void parseGroupSig(quint64 gid, const QString &dstUin, const QByteArray &data);
 
     int parseParamList(const QString &data, QStringList &paramList);
     QString getCookie(const QString &name, QUrl url) const;
@@ -127,6 +132,7 @@ private:
 
     void parsePoll(const QByteArray &data);
     void pollStatusChanged(const QVariantMap &m);
+    void pollInputNotify(const QVariantMap &m);
     void pollMemberMessage(const QVariantMap &m);
     void pollGroupMessage(const QVariantMap &m);
     void pollKickMessage(const QVariantMap &m);
@@ -146,11 +152,13 @@ private:
     void testGetLongNick(const QString &uin);
     void testGetMemberInfo(const QString &uin);
     void testPoll();
-    void testSendBuddyMessage(QString dstUin, QString content);
-    void testSendGroupMessage(quint64 gid, QString content);
+    void testSendBuddyMessage(QString dstUin, const QString &content);
+    void testSendGroupMessage(quint64 gid, const QString &content);
     void testChangeStatus(const QString &status);
     void testLoadGroups();
     void testLoadGroupInfo(quint64 gid);
+    void testGetGroupSig(quint64 gid, const QString &dstUin);
+    void testSendGroupSessionMessage(quint64 gid, QString dstUin, QString content);
 
     QString hashFriends(char *uin, char *ptwebqq);
 
@@ -166,6 +174,7 @@ signals:
     void pollReceived();
     void memberMessageReceived(int catid);
     void groupMessageReceived(quint64 gid);
+    void  buddyOnline(QString uin);
 
 
 public slots:

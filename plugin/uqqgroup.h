@@ -8,6 +8,7 @@ class UQQGroup : public QObject
 {
     Q_OBJECT
 public:
+
     explicit UQQGroup(QObject *parent = 0);
 
     void setGroupData(const QVariantMap &map);

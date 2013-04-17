@@ -1,0 +1,1 @@
+{"retcode":0,"result":[{"poll_type":"input_notify","value":{"msg_id":36221,"from_uin":3407224674,"to_uin":121830387,"msg_id2":3908646048,"msg_type":121,"reply_ip":4294967295}}]}

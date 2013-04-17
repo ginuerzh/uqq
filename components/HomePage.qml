@@ -36,6 +36,7 @@ Item {
                 longnick: modelData.longnick
                 online: true
                 status: modelData.status
+                client: QQ.Member.WebClient
 
                 onClicked: {
                     if (detail.height == 0) {

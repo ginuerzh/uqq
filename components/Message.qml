@@ -51,6 +51,7 @@ Item {
                         left: parent.left
                         right: parent.right
                     }
+                    spacing: units.gu(0.5)
 
                     Label {
                         text: name + "  " + time

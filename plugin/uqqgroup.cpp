@@ -7,6 +7,7 @@ UQQGroup::UQQGroup(QObject *parent) :
 
 void UQQGroup::setGroupData(const QVariantMap &map) {
     setGroupList(map.value("gnamelist").toList());
+    setGroupMarkList(map.value("gmarklist").toList());
 }
 
 void UQQGroup::setGroupList(const QVariantList &list) {
@@ -68,7 +69,7 @@ void UQQGroup::setGroupMembers(UQQCategory *group, const QVariantList &members) 
     QVariantMap m;
     UQQMember *member;
     UQQMemberDetail *detail;
-
+    //qDebug() << "set group members" << group->id();
     for (int i = 0; i < members.size(); i++) {
         m = members.at(i).toMap();
         member = new UQQMember(group->id(),m.value("uin").toString(), this);
@@ -97,7 +98,7 @@ void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
         Q_CHECK_PTR(member);
         if (member) {
             member->setClientType(m.value("client_type").toInt());
-            member->setStatus(m.value("stat").toInt());
+            member->setStatus(m.value("stat").toInt() / 10);
         }
     }
 }

@@ -150,13 +150,13 @@ void UQQContact::addMemberToCategory(int category, UQQMember *member) {
     if (cat) cat->addMember(member);
 }
 
-UQQCategory * UQQContact::getCategory(quint64 catid) {
+UQQCategory * UQQContact::getCategory(quint64 gid) {
     for (int i = 0; i < m_categories.size(); i++) {
-        if (m_categories.at(i)->id() == catid) {
+        if (m_categories.at(i)->id() == gid) {
             return m_categories.at(i);
         }
     }
-    qDebug() << "catetory" << catid << "not found!";
+    qDebug() << "catetory" << gid << "not found!";
     return Q_NULLPTR;
 }
 
@@ -203,7 +203,7 @@ void UQQContact::setCategoryMembers() {
     for (QHash<QString, UQQMember *>::const_iterator iter = m_members.begin();
          iter != m_members.end(); iter++) {
         member = iter.value();
-        addMemberToCategory(member->category(), member);
+        addMemberToCategory(member->gid(), member);
 /*
         if (member->status() != UQQMember::OfflineStatus &&
                 member->category() != UQQCategory::IllegalCategory) {
@@ -217,24 +217,20 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
     Q_ASSERT(uin.length() > 0);
     UQQMember *member = this->member(uin);
     Q_CHECK_PTR(member);
-    //qDebug() << "old" << member->status() << member->clientType();
+
     int oldStatus = member->status();
     member->setStatus(status);
     member->setClientType(clientType);
 
-    //qDebug() << member->category() << uin << status << clientType;
     if (oldStatus == status) return;
 
-    //UQQCategory *onlineCat = getCategory(UQQCategory::OnlineCategory);
-    UQQCategory *cat = getCategory(member->category());
+    UQQCategory *cat = getCategory(member->gid());
     Q_CHECK_PTR(cat);
 
     if (oldStatus == UQQMember::OfflineStatus) {  // offline -> online
         cat->incOnline();
-        //onlineCat->addMember(member);
     } else if (status == UQQMember::OfflineStatus){    // online -> offline
         cat->decOnline();
-        //onlineCat->removeMember(member);
     } else {
     }
 }

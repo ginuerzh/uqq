@@ -9,23 +9,33 @@
 class UQQMember : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(Status)
+    Q_ENUMS(ClientType)
 public:
 
     enum Status {
+        NullStatus,
         OnlineStatus,
-        CallmeStatus,
-        BusyStatus,
+        OfflineStatus,
         AwayStatus,
-        SilentStatus,
         HiddenStatus,
-        OfflineStatus
+        BusyStatus,
+        CallmeStatus,
+        SilentStatus
+    };
+
+    enum ClientType {
+        DesktopClient = 1,
+        MobileClient = 21,
+        IphoneClient = 24,
+        WebClient = 41
     };
 
     static Status statusIndex(const QString &s);
 
     Q_PROPERTY(QString uin READ uin NOTIFY uinChanged)
     Q_PROPERTY(QString account READ account NOTIFY accountChanged)
-    Q_PROPERTY(int category READ category NOTIFY categoryChanged)
+    Q_PROPERTY(quint64 gid READ gid NOTIFY gidChanged)
     Q_PROPERTY(QString markname READ markname NOTIFY marknameChanged)
     Q_PROPERTY(QString nickname READ nickname NOTIFY nicknameChanged)
     Q_PROPERTY(QString longnick READ longnick NOTIFY longnickChanged)
@@ -33,6 +43,9 @@ public:
     Q_PROPERTY(QUrl face READ face NOTIFY faceChanged)
     Q_PROPERTY(bool isVip READ isVip NOTIFY vipChanged)
     Q_PROPERTY(int vipLevel READ vipLevel NOTIFY vipLevelChanged)
+    Q_PROPERTY(int clientType READ clientType NOTIFY clientTypeChanged)
+    Q_PROPERTY(bool inputNotify READ inputNotify NOTIFY inputNotifyChanged)
+    Q_PROPERTY(QString groupSig READ groupSig NOTIFY groupSigChanged)
 
     Q_PROPERTY(int level READ level NOTIFY levelChanged)
     Q_PROPERTY(int levelDays READ levelDays NOTIFY levelDaysChanged)
@@ -43,14 +56,14 @@ public:
 
     Q_PROPERTY(UQQMemberDetail *detail READ detail NOTIFY detailChanged)
 
-    explicit UQQMember(int category = 0, const QString &uin = "", QObject *parent = 0);
+    explicit UQQMember(quint64 gid = 0, const QString &uin = "", QObject *parent = 0);
     
     QString uin() const;
     void setUin(QString uin);
     QString account() const;
     void setAccount(const QString &account);
-    int category() const;
-    void setCategory(int category);
+    quint64 gid() const;
+    void setGid(quint64 gid);
     QString markname() const;
     void setMarkname(QString markname);
     QString nickname() const;
@@ -69,6 +82,11 @@ public:
     void setClientType(int clientType);
     int flag() const;
     void setFlag(int flag);
+    bool inputNotify() const;
+    void setInputNotify(bool inputNotify);
+
+    QString groupSig() const;
+    void setGroupSig(const QString &groupSig);
 
     int level() const;
     void setLevel(int level);
@@ -92,7 +110,7 @@ public:
 private:
     QString m_uin;
     QString m_account;
-    int m_category;
+    quint64 m_gid;
     QString m_markname;
     QString m_nickname;
     QString m_longnick;
@@ -102,6 +120,9 @@ private:
     int m_vipLevel;
     int m_clientType;
     int m_flag;
+    bool m_inputNotify;
+
+    QString m_groupSig;
 
     int m_level;
     int m_levelDays;
@@ -116,7 +137,7 @@ private:
 signals:
     void uinChanged();
     void accountChanged();
-    void categoryChanged();
+    void gidChanged();
     void marknameChanged();
     void nicknameChanged();
     void longnickChanged();
@@ -124,6 +145,9 @@ signals:
     void faceChanged();
     void vipChanged();
     void vipLevelChanged();
+    void clientTypeChanged();
+    void inputNotifyChanged();
+    void groupSigChanged();
 
     void levelChanged();
     void levelDaysChanged();

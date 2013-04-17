@@ -1,7 +1,7 @@
 #include "uqqmember.h"
 
-UQQMember::UQQMember(int category, const QString &uin, QObject *parent) :
-    QObject(parent), m_uin(uin), m_category(category)
+UQQMember::UQQMember(quint64 gid, const QString &uin, QObject *parent) :
+    QObject(parent), m_uin(uin), m_gid(gid)
 {
     setDetail(Q_NULLPTR);
     setAccount("0");
@@ -12,6 +12,7 @@ UQQMember::UQQMember(int category, const QString &uin, QObject *parent) :
     setStatus(OfflineStatus);
     setMessageCount(0);
     setFlag(0);
+    setInputNotify(false);
 }
 
 QString UQQMember::uin() const {
@@ -31,11 +32,14 @@ void UQQMember::setAccount(const QString &account) {
     }
 }
 
-int UQQMember::category() const {
-    return m_category;
+quint64 UQQMember::gid() const {
+    return m_gid;
 }
-void UQQMember::setCategory(int category) {
-    m_category = category;
+void UQQMember::setGid(quint64 gid) {
+    if (m_gid != gid) {
+        m_gid = gid;
+        emit gidChanged();
+    }
 }
 
 QString UQQMember::markname() const {
@@ -106,7 +110,10 @@ int UQQMember::clientType() const {
     return m_clientType;
 }
 void UQQMember::setClientType(int clientType) {
-    m_clientType = clientType;
+    if (m_clientType != clientType) {
+        m_clientType = clientType;
+        emit clientTypeChanged();
+    }
 }
 
 int UQQMember::flag() const {
@@ -114,6 +121,16 @@ int UQQMember::flag() const {
 }
 void UQQMember::setFlag(int flag) {
     m_flag = flag;
+}
+
+bool UQQMember::inputNotify() const {
+    return m_inputNotify;
+}
+void UQQMember::setInputNotify(bool inputNotify) {
+    if (m_inputNotify != inputNotify) {
+        m_inputNotify = inputNotify;
+        emit inputNotifyChanged();
+    }
 }
 
 int UQQMember::level() const {
@@ -166,6 +183,16 @@ void UQQMember::setDetail(UQQMemberDetail *detail) {
     }
 }
 
+QString UQQMember::groupSig() const {
+    return m_groupSig;
+}
+void UQQMember::setGroupSig(const QString &groupSig) {
+    if (m_groupSig != groupSig) {
+        m_groupSig = groupSig;
+        emit groupSigChanged();
+    }
+}
+
 UQQMember::Status UQQMember::statusIndex(const QString &s) {
     Status si = OfflineStatus;
 
@@ -189,7 +216,6 @@ UQQMember::Status UQQMember::statusIndex(const QString &s) {
 
 void UQQMember::addMessage(UQQMessage *message) {
     m_messages.append(message);
-
     setMessageCount(messageCount() + 1);
     emit messageReceived();
 }

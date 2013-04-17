@@ -22,13 +22,18 @@ Item {
 
                 Category {
                     id: group
+
+                    property bool loaded: false
+
+
                     width: parent.width
                     maxHeight: root.height
                     title: modelData.markname == "" ? modelData.name : modelData.markname
                     subtitle: modelData.markname == "" ? "" : "(" + modelData.name + ")"
                     iconSource: "../group.png"
-                    property bool loaded: false
                     iconPageSource:"GroupMessage.qml"
+                    isGroup: true
+
 
                     Connections {
                         target: QQ.Client

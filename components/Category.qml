@@ -15,6 +15,8 @@ Item {
     property int maxHeight
     property string iconSource
     property alias iconPageSource: loader.source
+    property bool isGroup: false
+
 
     signal clicked
     signal iconClicked
@@ -37,8 +39,9 @@ Item {
             Image {
                 id: faceImg
                 anchors.verticalCenter: parent.verticalCenter
-                height: source == "" ? 0 : parent.height / 2
+                height: parent.height / 2
                 width: height
+                visible: source != ""
                 source: iconSource
                 MouseArea {
                     anchors.fill: parent
@@ -56,15 +59,17 @@ Item {
                 }
             }
             Label {
-                width: parent.width - subtitleLabel.width - faceImg.width - newMsgTip.width - arrow.width - units.gu(3)
+               // width: parent.width - subtitleLabel.width - faceImg.width - newMsgTip.width - arrow.width - units.gu(3)
                 anchors.verticalCenter: parent.verticalCenter
                 clip: true
                 text: title
             }
             Label {
                 id: subtitleLabel
+                anchors.verticalCenter: parent.verticalCenter
                 text: subtitle
                 opacity: root.state != "" ? 1 : 0
+                visible: opacity > 0
             }
 
             Rectangle {
@@ -77,13 +82,19 @@ Item {
                 antialiasing: true
                 anchors.verticalCenter: parent.verticalCenter
             }
-            Image {
-                id: arrow
-                anchors.verticalCenter: parent.verticalCenter
-
-                source: "../arrow.png"
-            }
         }
+
+        Image {
+            id: arrow
+            anchors {
+                right: parent.right
+                rightMargin: units.gu(1)
+                verticalCenter: parent.verticalCenter
+            }
+
+            source: "../arrow.png"
+        }
+
         MouseArea {
             anchors.fill: parent
             anchors.leftMargin: faceImg.source == "" ? 0 : faceImg.width + units.gu(2)
@@ -109,7 +120,11 @@ Item {
         opacity: 0
         visible: opacity > 0
         clip: true
-        delegate: Member { width: parent.width }
+        interactive: false
+        delegate: Member {
+            width: parent.width
+            isGroupMember: root.isGroup
+        }
     }
 
     Loader {
@@ -143,6 +158,7 @@ Item {
             PropertyChanges {
                 target: memberView
                 opacity: 1
+                interactive: true
             }
             PropertyChanges {
                 target: loader

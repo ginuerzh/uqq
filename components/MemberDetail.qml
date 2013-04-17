@@ -42,8 +42,8 @@ Item {
                 value: modelData.account
             }
             Field {
-                label: i18n.tr("等级")
-                value: modelData.level + "级"
+                label: i18n.tr("等级:")
+                value: modelData.level
             }
         }
 
@@ -81,7 +81,7 @@ Item {
             }
 
             Field {
-                label: i18n.tr("来自")
+                label: i18n.tr("来自:")
                 value: modelData.detail ?
                            modelData.detail.country + modelData.detail.province + modelData.detail.city :
                            "-"
