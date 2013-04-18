@@ -25,14 +25,15 @@ Item {
 
                     property bool loaded: false
 
-
                     width: parent.width
                     maxHeight: root.height
                     title: modelData.markname == "" ? modelData.name : modelData.markname
-                    subtitle: modelData.markname == "" ? "" : "(" + modelData.name + ")"
+                    subtitle: (modelData.markname == "" ? "" : "(" + modelData.name + ")") +
+                              (modelData.total > 0 ? " [" + modelData.online + "/" + modelData.total + "]" : "")
                     iconSource: "../group.png"
                     iconPageSource:"GroupMessage.qml"
                     isGroup: true
+                    messageCount: modelData.messageCount
 
 
                     Connections {
@@ -44,6 +45,8 @@ Item {
                             }
                         }
                         onGroupMessageReceived: {
+                        }
+                        onGroupSessionMessageReceived: {
                             if (gid == modelData.id && group.state == "")
                                     group.newMsg = true;
                         }

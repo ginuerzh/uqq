@@ -99,6 +99,7 @@ void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
         if (member) {
             member->setClientType(m.value("client_type").toInt());
             member->setStatus(m.value("stat").toInt() / 10);
+            group->incOnline();
         }
     }
 }

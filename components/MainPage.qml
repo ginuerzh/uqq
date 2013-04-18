@@ -6,8 +6,6 @@ import UQQ 1.0 as QQ
 MainView {
     objectName: "mainView"
     applicationName: "uqq"
-    width: units.gu(45)
-    height: units.gu(80)
 
     Timer {
         id: pollTimer
@@ -35,8 +33,9 @@ MainView {
         target: QQ.Client
         onMemberMessageReceived: newMsgAudio.play();
         onGroupMessageReceived: newMsgAudio.play();
-        onPollReceived: pollTimer.restart();
+        onGroupSessionMessageReceived: newMsgAudio.play();
         onBuddyOnline: onlineAudio.play();
+        onPollReceived: pollTimer.restart();
     }
 
     Tabs {

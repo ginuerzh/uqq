@@ -61,6 +61,7 @@ public:
 
     Q_INVOKABLE void checkCode(QString uin);
     Q_INVOKABLE void login(QString uin, QString pwd, QString vc, QString status = "online");
+    Q_INVOKABLE void autoReLogin();
     Q_INVOKABLE void logout();
     Q_INVOKABLE void getMemberDetail(QString uin);
     Q_INVOKABLE void loadContact();
@@ -81,6 +82,7 @@ public:
     Q_INVOKABLE void sendGroupSessionMessage(quint64 gid, QString dstUin, QString content);
 
 private:
+    void initClient();
     void initConfig();
     QVariant getConfig(const QString &key) const;
     void addConfig(const QString &key, const QVariant &value);
@@ -135,6 +137,7 @@ private:
     void pollInputNotify(const QVariantMap &m);
     void pollMemberMessage(const QVariantMap &m);
     void pollGroupMessage(const QVariantMap &m);
+    void pollGroupSessionMessage(const QVariantMap &m);
     void pollKickMessage(const QVariantMap &m);
 
     void parseLogout(const QByteArray &data);
@@ -166,16 +169,17 @@ signals:
     void errorChanged(int errCode);
     void captchaChanged(bool needed);
     void loginSuccess();
-    void contactReady();
+    void ready();
     void groupReady(quint64 gid);
     void onlineStatusChanged();
-    void buddyStatusChanged(int cat, QString uin);
+    void buddyStatusChanged(quint64 gid, QString uin);
 
     void pollReceived();
-    void memberMessageReceived(int catid);
+    void memberMessageReceived(quint64 gid);
     void groupMessageReceived(quint64 gid);
+    void groupSessionMessageReceived(quint64 gid);
     void  buddyOnline(QString uin);
-
+    void kicked(QString reason);
 
 public slots:
     void onFinished(QNetworkReply *reply);

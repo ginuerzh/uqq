@@ -10,6 +10,7 @@ UQQCategory::UQQCategory(QObject *parent) :
     m_code = 0;
     m_groupInfo = Q_NULLPTR;
     m_groupReady = false;
+    m_messageCount = 0;
 }
 
 quint64 UQQCategory::account() const {
@@ -107,7 +108,7 @@ QList<UQQMember *> UQQCategory::members() {
 UQQMember *UQQCategory::member(const QString &uin) {
     UQQMember *m = m_members.value(uin);
     if (!m) {
-        qDebug() << "cat member" << uin << "not found!";
+        qDebug() << "group member" << uin << "not found!";
     }
     return m;
 }

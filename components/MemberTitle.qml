@@ -67,7 +67,7 @@ Item {
     onLnickExpandedChanged: {
         if (lnickExpanded) {
             longnickLineCount = 3;
-            height = Qt.binding(function() { return info.height })
+            height = Qt.binding(function() { return info.height; });
         } else {
             height = minHeight;
         }
@@ -146,8 +146,8 @@ Item {
     }
 
     UbuntuShape {
-        width: newMsgCount.width + units.gu(2)
-        height: newMsgCount.height + units.gu(1)
+        width: newMsgCount.width + units.gu(1)
+        height: newMsgCount.height + units.gu(0.5)
         anchors {
             top: parent.top
             right: parent.right

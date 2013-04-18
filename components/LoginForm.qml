@@ -1,20 +1,15 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
 import Ubuntu.Components.ListItems 0.1 as ListItem
-import Ubuntu.Components.Popups 0.1 as Popups
 import UQQ 1.0 as QQ
 import "md5.js" as MD5
 
 Item {
     id: loginForm
-    width: units.gu(45)
-    height: units.gu(80)
 
     Component.onCompleted: {
         QQ.Client.captchaChanged.connect(onCaptchaChanged);
         QQ.Client.errorChanged.connect(onErrorChanged);
-        QQ.Client.loginSuccess.connect(onLoginSuccess);
-        QQ.Client.contactReady.connect(onContactReady);
     }
 
     Component.onDestruction: {
@@ -25,14 +20,14 @@ Item {
         spacing: units.gu(1)
 
         Image {
-            source: "../logo.png"
+            source: "../logo2.png"
         }
 
         Label {
             id: errMsg
             width: parent.width
             clip: true
-
+            text: QQ.Client.getLoginInfo("errMsg");
             color: "red"
         }
 
@@ -164,14 +159,6 @@ Item {
             errMsg.text = QQ.Client.getLoginInfo("errMsg");
             indicator.running = false;
         }
-    }
-
-    function onLoginSuccess() {
-        QQ.Client.loadContact();
-    }
-
-    function onContactReady() {
-        loader.source = "MainPage.qml";
     }
 
     function login(uin, password, vc, status) {

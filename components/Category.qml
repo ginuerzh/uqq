@@ -16,6 +16,9 @@ Item {
     property string iconSource
     property alias iconPageSource: loader.source
     property bool isGroup: false
+    property int messageCount: 0
+    property int onlineCount: 0
+
 
 
     signal clicked
@@ -34,15 +37,37 @@ Item {
                 leftMargin: units.gu(1)
                 rightMargin: units.gu(1)
             }
-            spacing: units.gu(1)
+            spacing: units.gu(0.5)
 
             Image {
                 id: faceImg
                 anchors.verticalCenter: parent.verticalCenter
-                height: parent.height / 2
+                height: parent.height - units.gu(2)
                 width: height
                 visible: source != ""
                 source: iconSource
+
+                UbuntuShape {
+                    width: newMsgCount.width + units.gu(0.5)
+                    height: newMsgCount.height
+                    anchors {
+                        right: parent.right
+                        bottom: parent.bottom
+                    }
+                    antialiasing: true
+                    color: "orangered"
+                    visible: messageCount > 0
+
+                    Label {
+                        id: newMsgCount
+                        anchors.centerIn: parent
+                        text: messageCount
+                        font.bold: true
+                        color: "white"
+                        fontSize: "small"
+                    }
+                }
+
                 MouseArea {
                     anchors.fill: parent
                     anchors.margins: -units.gu(2)
@@ -59,7 +84,6 @@ Item {
                 }
             }
             Label {
-               // width: parent.width - subtitleLabel.width - faceImg.width - newMsgTip.width - arrow.width - units.gu(3)
                 anchors.verticalCenter: parent.verticalCenter
                 clip: true
                 text: title
@@ -70,6 +94,9 @@ Item {
                 text: subtitle
                 opacity: root.state != "" ? 1 : 0
                 visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {}
+                }
             }
 
             Rectangle {

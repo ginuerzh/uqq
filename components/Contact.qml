@@ -34,7 +34,7 @@ Item {
                     Connections {
                         target: QQ.Client
                         onMemberMessageReceived: {
-                            if (catid == modelData.id && category.state == "")
+                            if (gid == modelData.id && category.state == "")
                                     category.newMsg = true;
                         }
                     }

@@ -1,0 +1,1 @@
+{"retcode":0,"result":[{"poll_type":"kick_message","value":{"way":"poll","show_reason":1,"reason":"\u60A8\u7684\u8D26\u53F7\u5728\u53E6\u4E00\u5730\u70B9\u767B\u5F55\uFF0C\u60A8\u5DF2\u88AB\u8FEB\u4E0B\u7EBF\u3002\u5982\u6709\u7591\u95EE\uFF0C\u8BF7\u767B\u5F55 safe.qq.com \u4E86\u89E3\u66F4\u591A\u3002"}}]}
