@@ -1,17 +1,29 @@
-uqq
-===
+uqq - QQ client for ubuntu phone
 
-QQ for ubuntu phone, using webqq 3.0 protocol
+QQ is a popular chat app in China. 
+uqq is QQ client developed for ubuntu phone. If you want to try this app, first you must have a QQ number (or you can register from the official website: http://zc.qq.com/en/index.html), 
 
-为ubuntu phone设计的一个QQ客户端，使用Qt/QML语言实现，使用webqq3.0协议。目前仅初步设计出UI，及操作方式，可进行demo展示。
-通讯协议部分未实现，并且未进行任何优化。
+the demo video on youtube:
+https://www.youtube.com/watch?v=o99vtgglVWA
 
-效果图：
+please follow the below instructions:
 
-http://ubuntuone.com/2kxxkcnyBoVhnOvRc1DZrC
-http://ubuntuone.com/23TRv11RPJP3x7TuoQF8rS
-http://ubuntuone.com/05HId9TmnOWrP7SCytSBCV
-http://ubuntuone.com/42BoE84vAEZDpFOvPLBA4Q
+1. install the ubuntu-sdk:
 
-Demo video:
-http://www.youtube.com/watch?v=SoMEi_s8-uY
+$ sudo add-apt-repository ppa:canonical-qt5-edgers/qt5-proper && sudo add-apt-repository ppa:ubuntu-sdk-team/ppa && sudo apt-get update && sudo apt-get install ubuntu-sdk notepad-qml
+$ sudo apt-get install gstreamer0.10-plugins-bad
+
+You can find more detail about the ubuntu-sdk in the official page: http://developer.ubuntu.com/get-started/gomobile/.
+
+2. get this app source code:
+$ git clone git://github.com/ginuerzh/uqq.git
+
+3. run:
+$ cd uqq
+$ sh uqq.sh
+
+After compiling, if no error occurs, then you should see the main window.
+
+any questions? send to ginuerzh@gmail.com please.
+
+
