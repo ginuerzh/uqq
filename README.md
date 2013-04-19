@@ -16,9 +16,11 @@ $ sudo apt-get install gstreamer0.10-plugins-bad
 You can find more detail about the ubuntu-sdk in the official page: http://developer.ubuntu.com/get-started/gomobile/.
 
 2. get this app source code:
+
 $ git clone git://github.com/ginuerzh/uqq.git
 
 3. run:
+
 $ cd uqq
 $ sh uqq.sh
 

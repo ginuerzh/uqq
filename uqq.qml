@@ -11,6 +11,7 @@ import UQQ 1.0 as QQ
 
 Item {
     id: main
+    objectName: "uqq"
     width: units.gu(45)
     height: units.gu(80)
     property string msg

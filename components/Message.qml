@@ -13,7 +13,6 @@ Item {
     onLoadMsgChanged: {
         if (loadMsg) {
             loadMessages(modelData.messages());
-            //modelData.messageReceived.connect(onMessageReceived);
         }
     }
 

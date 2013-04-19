@@ -13,9 +13,8 @@ public:
 
     enum CategoryId {
         BuddyCategoryId,
-        IllegalCategoryId = 0xFFFF
+        IllegalCategoryId = 0xFFFFFFFF
     };
-
 
     Q_PROPERTY(quint64 account READ account NOTIFY accountChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)

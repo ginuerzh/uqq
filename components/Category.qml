@@ -152,6 +152,24 @@ Item {
             width: parent.width
             isGroupMember: root.isGroup
         }
+        onMovementEnded: {
+            var visibleyPos = visibleArea.yPosition * contentHeight;
+            var visibleHeight = visibleArea.heightRatio * contentHeight;
+
+            var begIndex = indexAt(0, visibleyPos);
+            var endIndx = indexAt(0, visibleyPos + visibleHeight);
+            //console.log(visibleyPos + "," + visibleHeight + "," + contentHeight);
+            //console.log("index(" + begIndex + ", " + endIndx + ")");
+            if (begIndex < 0) begIndex = 0;
+            if (endIndx < 0) endIndx = count - 1;
+
+            for (var index = begIndex; index < endIndx + 1; index++) {
+                var o = model[index];
+                if (o.longnick == "") {
+                    QQ.Client.getSimpleInfo(o.gid, o.uin);
+                }
+            }
+        }
     }
 
     Loader {

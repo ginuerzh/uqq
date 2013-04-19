@@ -150,7 +150,7 @@ void UQQGroup::setMembersCards(UQQCategory *group, const QVariantList &cards) {
 
 QList<UQQCategory *> &UQQGroup::groups() {
      return m_groups;
- }
+}
 
 UQQCategory *UQQGroup::getGroupById(quint64 gid) {
     for (int i = 0; i < m_groups.size(); i++) {

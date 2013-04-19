@@ -39,12 +39,12 @@ Item {
                         }
                     }
 
-                    onClicked: {
-                        if (!loaded) {
-                            loaded = true;
-                            QQ.Client.loadInfoInCategory(modelData.id);
-                        }
-                    }
+//                    onClicked: {
+//                        if (!loaded) {
+//                            loaded = true;
+//                            QQ.Client.loadInfoInCategory(modelData.id);
+//                        }
+//                    }
                 }
             }
         }

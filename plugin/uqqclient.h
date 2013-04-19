@@ -63,6 +63,7 @@ public:
     Q_INVOKABLE void login(QString uin, QString pwd, QString vc, QString status = "online");
     Q_INVOKABLE void autoReLogin();
     Q_INVOKABLE void logout();
+    Q_INVOKABLE void getSimpleInfo(quint64 gid, QString uin);
     Q_INVOKABLE void getMemberDetail(QString uin);
     Q_INVOKABLE void loadContact();
     Q_INVOKABLE QList<QObject *> getContactList();
@@ -70,8 +71,6 @@ public:
     Q_INVOKABLE QList<QObject *> getCategoryMembers(quint64 catid);
     Q_INVOKABLE QList<QObject *> getGroupMembers(quint64 gid);
     Q_INVOKABLE QList<QObject *> getMember(QString uin);
-    Q_INVOKABLE void loadInfoInCategory(int category);
-    Q_INVOKABLE void getMemberFace(QString uin);
     Q_INVOKABLE void getOnlineBuddies();
     Q_INVOKABLE void poll();
     Q_INVOKABLE void sendBuddyMessage(QString dstUin, QString content);
@@ -94,8 +93,11 @@ private:
     void secondLogin();
     void verifySecondLogin(const QByteArray &data);
 
-    void getLongNick(QString uin);
-    void parseLongNick(const QString &uin, const QByteArray &data);
+    void getMemberFace(const QString &uin);
+    void getGroupMemberFace(quint64 gid, const QString &uin);
+    void loadInfoInCategory(int category);
+    void getLongNick(quint64 gid, const QString &uin);
+    void parseLongNick(quint64 gid, const QString &uin, const QByteArray &data);
     void getMemberLevel(const QString &uin);
     void parseMemberLevel(const QString &uin, const QByteArray &data);
     void getMemberInfo(const QString &uin);
@@ -105,8 +107,8 @@ private:
     void getGroupAccount(const QString &uin);
     void getAccount(const QString &uin, Action action);
     void parseAccount(const QString &uin, const QByteArray &data, Action action);
-    void getFace(const QString &uin, int cache = 0, int type = 1);
-    void saveFace(const QString &uin, const QByteArray &data);
+    void getFace(quint64 gid, const QString &uin, int cache = 0, int type = 1);
+    void saveFace(quint64 gid, const QString &uin, const QByteArray &data);
     void parseContact(const QByteArray &data);
     void parseOnlineBuddies(const QByteArray &data);
 
@@ -124,6 +126,7 @@ private:
     int parseParamList(const QString &data, QStringList &paramList);
     QString getCookie(const QString &name, QUrl url) const;
 
+    UQQMember *member(quint64 gid, const QString &uin);
     QString getClientId();
     QString getRandom();
     int getRandomInt(int max);
@@ -149,10 +152,10 @@ private:
     void testLoadContact();
     void testGetOnlineBuddies();
     void testLogin(const QString &pwd, const QString &vc, const QString &status);
-    void testGetFace(const QString &uin);
+    void testGetFace(quint64 gid, const QString &uin);
     void testGetAccount(const QString &uin, Action action);
     void testGetMemberLevel(const QString &uin);
-    void testGetLongNick(const QString &uin);
+    void testGetLongNick(quint64 gid, const QString &uin);
     void testGetMemberInfo(const QString &uin);
     void testPoll();
     void testSendBuddyMessage(QString dstUin, const QString &content);

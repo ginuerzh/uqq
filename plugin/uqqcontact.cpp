@@ -156,7 +156,7 @@ UQQCategory * UQQContact::getCategory(quint64 gid) {
             return m_categories.at(i);
         }
     }
-    qDebug() << "catetory" << gid << "not found!";
+    //qDebug() << "catetory" << gid << "not found!";
     return Q_NULLPTR;
 }
 

@@ -2,7 +2,7 @@
 #include "uqqmemberdetail.h"
 
 
-//#define __TST
+#define __TST
 
 #ifdef __TST
 #define TEST(func) \
@@ -49,17 +49,22 @@ void UQQClient::initConfig() {
     addConfig("rootPath", rootPath);  // the data root path
     QString userPath = rootPath + "/" + getLoginInfo("uin").toString();
     addConfig("userPath", userPath);
+    QString groupPath = userPath + "/group";   // the group path
+    addConfig("groupPath", groupPath);
+    QString groupFacePath = groupPath + "/faces";
+    addConfig("groupfacePath", groupFacePath);  // the group face images path
     QString facePath = userPath + "/faces";
     addConfig("facePath", facePath);    // the face images path
 
     QDir path;
-    if (!path.mkpath(facePath))
-        qDebug() << "Error: make path " << facePath;
+    if (!path.mkpath(facePath) || !path.mkpath(groupPath) || !path.mkpath(groupFacePath))
+        qDebug() << "Error: make path";
 }
 
 void UQQClient::onFinished(QNetworkReply *reply) {
     bool ok;
     Action action = (Action)reply->request().attribute(QNetworkRequest::User).toInt(&ok);
+    QVariant p0 = reply->request().attribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1));
     QVariant p = reply->request().attribute(QNetworkRequest::UserMax);
 
     if (!ok || reply->error() != QNetworkReply::NoError) {
@@ -91,7 +96,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         parseAccount(p.toString(), data, GetGroupAccountAction);
         break;
     case GetLongNickAction:
-        parseLongNick(p.toString(), data);
+        parseLongNick(p0.toULongLong(), p.toString(), data);
         break;
     case GetMemberLevelAction:
         parseMemberLevel(p.toString(), data);
@@ -100,7 +105,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         parseMemberInfo(p.toString(), data);
         break;
     case GetUserFaceAction:
-        saveFace(p.toString(), data);
+        saveFace(p0.toULongLong(), p.toString(), data);
         break;
     case LoadContactAction:
         parseContact(data);
@@ -129,7 +134,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         parseGroupInfo(p.toULongLong(), data);
         break;
     case GetGroupSigAction:
-        parseGroupSig(reply->request().attribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1)).toULongLong(),
+        parseGroupSig(p0.toULongLong(),
                       p.toString(),
                       data);
         break;
@@ -299,6 +304,8 @@ void UQQClient::verifyLogin(const QByteArray &data) {
 }
 
 void UQQClient::autoReLogin() {
+    TEST(onLoginSuccess(getLoginInfo("uin").toString(), getLoginInfo("status").toString()))
+
     secondLogin();
 }
 
@@ -356,9 +363,16 @@ void UQQClient::onLoginSuccess(const QString &uin, const QString &status) {
     m_contact->addMember(user);
 
     getUserFace();
+    getLongNick(UQQCategory::IllegalCategoryId, uin);
     getMemberDetail(uin);
 
-    emit loginSuccess();
+    loadContact();
+    //emit loginSuccess();
+}
+
+void UQQClient::getSimpleInfo(quint64 gid, QString uin) {
+    getFace(gid, uin);
+    getLongNick(gid, uin);
 }
 
 void UQQClient::getMemberDetail(QString uin) {
@@ -423,23 +437,24 @@ void UQQClient::parseAccount(const QString &uin, const QByteArray &data, Action 
     }
 }
 
-void UQQClient::testGetLongNick(const QString &uin) {
+void UQQClient::testGetLongNick(quint64 gid, const QString &uin) {
     QFile file("test/lnick.txt");
     file.open(QIODevice::ReadOnly);
     QByteArray data = file.readAll();
     file.close();
 
-    parseLongNick(uin, data);
+    parseLongNick(gid, uin, data);
 }
 
-void UQQClient::getLongNick(QString uin) {
-    TEST(testGetLongNick(uin))
+void UQQClient::getLongNick(quint64 gid, const QString &uin) {
+    TEST(testGetLongNick(gid, uin))
 
     QString url = QString("http://s.web2.qq.com/api/get_single_long_nick2?tuin=%1&vfwebqq=%2&t=%3")
             .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, GetLongNickAction);
+    request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
     request.setUrl(QUrl(url));
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
@@ -451,7 +466,7 @@ void UQQClient::getLongNick(QString uin) {
  * long nick json format:
  * {"retcode":0,"result":[{"uin":1279450562,"lnick":"123456"}]}
  */
-void UQQClient::parseLongNick(const QString &uin, const QByteArray &data) {
+void UQQClient::parseLongNick(quint64 gid, const QString &uin, const QByteArray &data) {
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
     QVariantList list;
@@ -459,9 +474,9 @@ void UQQClient::parseLongNick(const QString &uin, const QByteArray &data) {
     if (m.value("retcode", DefaultError).toInt() == NoError &&
             (list = m.value("result").toList()).size() > 0) {
         m = list.at(0).toMap();
-        member = m_contact->member(uin);
-        Q_CHECK_PTR(member);
-        member->setLongnick(m.value("lnick").toString());
+        member = this->member(gid, uin);
+        if (member)
+            member->setLongnick(m.value("lnick").toString());
     } else {
         qDebug() << "parseLongNick:" << data;
     }
@@ -563,23 +578,40 @@ void UQQClient::parseMemberInfo(const QString &uin, const QByteArray &data) {
     }
 }
 
+UQQMember *UQQClient::member(quint64 gid, const QString &uin) {
+    UQQMember *member = Q_NULLPTR;
+    UQQCategory *cat = Q_NULLPTR;
+
+    if (gid == UQQCategory::IllegalCategoryId) {
+        member = m_contact->member(uin);
+        Q_CHECK_PTR(member);
+        return member;
+    }
+
+    if ((cat = m_contact->getCategory(gid)) == Q_NULLPTR) {
+        cat = m_group->getGroupById(gid);
+    }
+    Q_CHECK_PTR(cat);
+    if (cat) {
+        member = cat->member(uin);
+    }
+    Q_CHECK_PTR(member);
+
+    return member;
+}
+
 void UQQClient::getUserFace() {
-    getFace(getLoginInfo("uin").toString(), 1);
+    getFace(UQQCategory::IllegalCategoryId, getLoginInfo("uin").toString(), 1);
 }
 
-void UQQClient::getMemberFace(QString uin) {
-    getFace(uin);
+void UQQClient::testGetFace(quint64 gid, const QString &uin) {
+    QString path = "../121830387.bmp";
+    UQQMember *member = this->member(gid, uin);
+    if (member) member->setFace(path);
 }
 
-void UQQClient::testGetFace(const QString &uin) {
-    QString path = "../friend.png";
-    m_contact->member(uin)->setFace(path);
-
-    getLongNick(uin);
-}
-
-void UQQClient::getFace(const QString &uin, int cache, int type) {
-    TEST(testGetFace(uin))
+void UQQClient::getFace(quint64 gid, const QString &uin, int cache, int type) {
+    TEST(testGetFace(gid, uin))
 
     QString url = QString("http://face%1.qun.qq.com/cgi/svr/face/getface?cache=%2&type=%3&fid=0&uin=%4&vfwebqq=%5")
             .arg(QString::number(qrand() % 10 + 1), // the random domain (face1 - face10)
@@ -588,15 +620,17 @@ void UQQClient::getFace(const QString &uin, int cache, int type) {
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, GetUserFaceAction);
+    request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
     request.setUrl(QUrl(url));
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
 
-void UQQClient::saveFace(const QString &uin, const QByteArray &data) {
+void UQQClient::saveFace(quint64 gid, const QString &uin, const QByteArray &data) {
     QString facePath = getConfig("facePath").toString();
-    UQQMember *member = Q_NULLPTR;
+    UQQMember *member = this->member(gid, uin);
+    if (!member) return;
     QString path = facePath + "/" + uin + imageFormat(data);
 
     QFile file(path);
@@ -604,11 +638,7 @@ void UQQClient::saveFace(const QString &uin, const QByteArray &data) {
     file.write(data);
     file.close();
 
-    member = m_contact->member(uin);
-    Q_CHECK_PTR(member);
     member->setFace(path);
-
-    getLongNick(uin);
 }
 
 void UQQClient::testChangeStatus(const QString &status) {
@@ -1197,12 +1227,13 @@ void UQQClient::testPoll() {
     data = file.readAll();
     file.close();
     parsePoll(data);
-
+/*
     file.setFileName("test/kick_msg.txt");
     file.open(QIODevice::ReadOnly);
     data = file.readAll();
     file.close();
     parsePoll(data);
+    */
 }
 
 void UQQClient::poll() {
