@@ -34,10 +34,11 @@ public:
     static Status statusIndex(const QString &s);
 
     Q_PROPERTY(QString uin READ uin NOTIFY uinChanged)
-    Q_PROPERTY(QString account READ account NOTIFY accountChanged)
     Q_PROPERTY(quint64 gid READ gid NOTIFY gidChanged)
+    Q_PROPERTY(bool isFriend READ isFriend NOTIFY isFriendChanged)
     Q_PROPERTY(QString markname READ markname NOTIFY marknameChanged)
     Q_PROPERTY(QString nickname READ nickname NOTIFY nicknameChanged)
+    Q_PROPERTY(QString card READ card NOTIFY cardChanged)
     Q_PROPERTY(QString longnick READ longnick NOTIFY longnickChanged)
     Q_PROPERTY(int status READ status WRITE setStatus NOTIFY statusChanged)
     Q_PROPERTY(QUrl face READ face NOTIFY faceChanged)
@@ -47,11 +48,6 @@ public:
     Q_PROPERTY(bool inputNotify READ inputNotify NOTIFY inputNotifyChanged)
     Q_PROPERTY(QString groupSig READ groupSig NOTIFY groupSigChanged)
 
-    Q_PROPERTY(int level READ level NOTIFY levelChanged)
-    Q_PROPERTY(int levelDays READ levelDays NOTIFY levelDaysChanged)
-    Q_PROPERTY(int levelHours READ levelHours NOTIFY levelHoursChanged)
-    Q_PROPERTY(int levelRemainDays READ levelRemainDays NOTIFY levelRemainDaysChanged)
-
     Q_PROPERTY(int messageCount READ messageCount NOTIFY messageCountChanged)
 
     Q_PROPERTY(UQQMemberDetail *detail READ detail NOTIFY detailChanged)
@@ -60,14 +56,16 @@ public:
     
     QString uin() const;
     void setUin(QString uin);
-    QString account() const;
-    void setAccount(const QString &account);
     quint64 gid() const;
     void setGid(quint64 gid);
+    bool isFriend() const;
+    void setIsFriend(bool isFriend);
     QString markname() const;
     void setMarkname(QString markname);
     QString nickname() const;
     void setNickname(const QString &nickname);
+    QString card() const;
+    void setCard(QString card);
     QString longnick() const;
     void setLongnick(const QString &longnick);
     QUrl face() const;
@@ -88,15 +86,6 @@ public:
     QString groupSig() const;
     void setGroupSig(const QString &groupSig);
 
-    int level() const;
-    void setLevel(int level);
-    int levelDays() const;
-    void setLevelDays(int days);
-    int levelHours() const;
-    void setLevelHours(int hours);
-    int levelRemainDays() const;
-    void setLevelRemainDays(int remainDays);
-
     UQQMemberDetail *detail() const;
     void setDetail(UQQMemberDetail *detail);
 
@@ -109,8 +98,9 @@ public:
 
 private:
     QString m_uin;
-    QString m_account;
     quint64 m_gid;
+    bool m_isFriend;
+    QString m_card;
     QString m_markname;
     QString m_nickname;
     QString m_longnick;
@@ -124,22 +114,18 @@ private:
 
     QString m_groupSig;
 
-    int m_level;
-    int m_levelDays;
-    int m_levelHours;
-    int m_levelRemainDays;
-
     UQQMemberDetail *m_detail;
 
     QList<UQQMessage *> m_messages;
     int m_messageCount;
 
 signals:
+    void isFriendChanged();
     void uinChanged();
-    void accountChanged();
     void gidChanged();
     void marknameChanged();
     void nicknameChanged();
+    void cardChanged();
     void longnickChanged();
     void statusChanged();
     void faceChanged();
@@ -148,11 +134,6 @@ signals:
     void clientTypeChanged();
     void inputNotifyChanged();
     void groupSigChanged();
-
-    void levelChanged();
-    void levelDaysChanged();
-    void levelHoursChanged();
-    void levelRemainDaysChanged();
 
     void detailChanged();
 

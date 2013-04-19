@@ -31,8 +31,7 @@ Item {
                 width: parent.width
 
                 icon: modelData.face == "" ? "../friend.png" : modelData.face
-                markname: modelData.markname
-                nickname: modelData.detail ? modelData.detail.nickname : ""
+                nickname: modelData.nickname
                 longnick: modelData.longnick
                 online: true
                 status: modelData.status

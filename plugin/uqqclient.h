@@ -25,6 +25,7 @@ public:
         GetGroupAccountAction,
         GetMemberLevelAction,
         GetMemberInfoAction,
+        GetStrangerInfoAction,
         GetUserFaceAction,
         LoadContactAction,
         GetOnlineBuddiesAction,
@@ -32,10 +33,10 @@ public:
         SendBuddyMessageAction,
         SendGroupMessageAction,
         SendGroupSessionMessageAction,
-        ChangeStatusAction,
         LoadGroupsAction,
         LoadGroupInfoAction,
-        GetGroupSigAction
+        GetGroupSigAction,
+        ChangeStatusAction
     };
 
     enum Error {
@@ -64,7 +65,7 @@ public:
     Q_INVOKABLE void autoReLogin();
     Q_INVOKABLE void logout();
     Q_INVOKABLE void getSimpleInfo(quint64 gid, QString uin);
-    Q_INVOKABLE void getMemberDetail(QString uin);
+    Q_INVOKABLE void getMemberDetail(quint64 gid, QString uin);
     Q_INVOKABLE void loadContact();
     Q_INVOKABLE QList<QObject *> getContactList();
     Q_INVOKABLE QList<QObject *> getGroupList();
@@ -102,11 +103,13 @@ private:
     void parseMemberLevel(const QString &uin, const QByteArray &data);
     void getMemberInfo(const QString &uin);
     void parseMemberInfo(const QString &uin, const QByteArray &data);
+    void getStrangerInfo(quint64 gid, const QString &uin);
+    void parseStrangerInfo(quint64 gid, const QString &uin, const QByteArray &data);
     void getUserFace();
-    void getMemberAccount(const QString &uin);
+    void getMemberAccount(quint64 gid, const QString &uin);
     void getGroupAccount(const QString &uin);
-    void getAccount(const QString &uin, Action action);
-    void parseAccount(const QString &uin, const QByteArray &data, Action action);
+    void getAccount(quint64 gid, const QString &uin, Action action);
+    void parseAccount(quint64 gid, const QString &uin, const QByteArray &data, Action action);
     void getFace(quint64 gid, const QString &uin, int cache = 0, int type = 1);
     void saveFace(quint64 gid, const QString &uin, const QByteArray &data);
     void parseContact(const QByteArray &data);
@@ -153,10 +156,11 @@ private:
     void testGetOnlineBuddies();
     void testLogin(const QString &pwd, const QString &vc, const QString &status);
     void testGetFace(quint64 gid, const QString &uin);
-    void testGetAccount(const QString &uin, Action action);
+    void testGetAccount(quint64 gid, const QString &uin, Action action);
     void testGetMemberLevel(const QString &uin);
     void testGetLongNick(quint64 gid, const QString &uin);
     void testGetMemberInfo(const QString &uin);
+    void testGetStrangerInfo(quint64 gid, const QString &uin);
     void testPoll();
     void testSendBuddyMessage(QString dstUin, const QString &content);
     void testSendGroupMessage(quint64 gid, const QString &content);

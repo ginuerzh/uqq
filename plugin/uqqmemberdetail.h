@@ -17,6 +17,13 @@ public:
 
     static Gender genderIndex(const QString &s);
 
+    Q_PROPERTY(quint64 account READ account NOTIFY accountChanged)
+
+    Q_PROPERTY(int level READ level NOTIFY levelChanged)
+    Q_PROPERTY(int levelDays READ levelDays NOTIFY levelDaysChanged)
+    Q_PROPERTY(int levelHours READ levelHours NOTIFY levelHoursChanged)
+    Q_PROPERTY(int levelRemainDays READ levelRemainDays NOTIFY levelRemainDaysChanged)
+
     Q_PROPERTY(QDateTime birthday READ birthday NOTIFY birthdayChanged)
     Q_PROPERTY(QString occupation READ occupation NOTIFY occupationChanged)
     Q_PROPERTY(QString phone READ phone NOTIFY phoneChanged)
@@ -33,9 +40,21 @@ public:
     Q_PROPERTY(QString personal READ personal NOTIFY personalChanged)
     Q_PROPERTY(QString email READ email NOTIFY emailChanged)
     Q_PROPERTY(int gender READ gender NOTIFY genderChanged)
-    Q_PROPERTY(QString nickname READ nickname NOTIFY nicknameChanged)
+    Q_PROPERTY(QString token READ token NOTIFY tokenChanged)
 
     explicit UQQMemberDetail(QObject *parent = 0);
+
+    quint64 account() const;
+    void setAccount(quint64 account);
+
+    int level() const;
+    void setLevel(int level);
+    int levelDays() const;
+    void setLevelDays(int days);
+    int levelHours() const;
+    void setLevelHours(int hours);
+    int levelRemainDays() const;
+    void setLevelRemainDays(int remainDays);
 
     // the member's detail
     int faceid() const;
@@ -72,10 +91,17 @@ public:
     void setEmail(const QString &email);
     int gender() const;
     void setGender(int gender);
-    QString nickname() const;
-    void setNickname(const QString &nickname);
+    QString token() const;
+    void setToken(const QString &token);
     
 signals:
+    void accountChanged();
+
+    void levelChanged();
+    void levelDaysChanged();
+    void levelHoursChanged();
+    void levelRemainDaysChanged();
+
     void birthdayChanged();
     void occupationChanged();
     void phoneChanged();
@@ -92,11 +118,17 @@ signals:
     void personalChanged();
     void emailChanged();
     void genderChanged();
-    void nicknameChanged();
+    void tokenChanged();
 
 public slots:
 
 private:
+    quint64 m_account;
+
+    int m_level;
+    int m_levelDays;
+    int m_levelHours;
+    int m_levelRemainDays;
 
     int m_faceid;
     QDateTime m_birthday;
@@ -115,7 +147,7 @@ private:
     QString m_personal;
     QString m_email;
     int m_gender;
-    QString m_nickname;
+    QString m_token;
     
 };
 

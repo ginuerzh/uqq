@@ -6,8 +6,6 @@ import UQQ 1.0 as QQ
 Rectangle {
     id: member
 
-    property bool isGroupMember: false
-
     height: title.height + units.gu(2)
     clip: true
     color: "whitesmoke"
@@ -27,7 +25,7 @@ Rectangle {
             width: parent.width
 
             icon: modelData.face == "" ? "../friend.png" : modelData.face
-            markname: modelData.markname
+            markname: modelData.isFriend ? modelData.markname : modelData.card
             nickname: modelData.nickname
             longnick: modelData.longnick
             online: modelData.status !== QQ.Member.OfflineStatus
@@ -94,10 +92,10 @@ Rectangle {
             sourceComponent: Message {
                 loadMsg: true
                 onSendClicked: {
-                    if (member.isGroupMember && modelData.groupSig.length > 0)
-                        QQ.Client.sendGroupSessionMessage(modelData.gid, modelData.uin, content);
-                    else
+                    if (modelData.isFriend)
                         QQ.Client.sendBuddyMessage(modelData.uin, content);
+                    else
+                        QQ.Client.sendGroupSessionMessage(modelData.gid, modelData.uin, content);
                 }
             }
 
@@ -177,10 +175,10 @@ Rectangle {
                 }
                 ScriptAction {
                     script: {
-                        if (modelData.detail == null && !member.isGroupMember)
-                            QQ.Client.getMemberDetail(modelData.uin);
-                        if (member.isGroupMember && modelData.groupSig.length == 0)
-                            QQ.Client.getGroupSig(modelData.gid, modelData.uin);
+                        if (modelData.detail == null) {
+                            //console.log("get member detail:" + modelData.gid + "/" + modelData.uin)
+                            QQ.Client.getMemberDetail(modelData.gid, modelData.uin);
+                        }
                     }
                 }
             }

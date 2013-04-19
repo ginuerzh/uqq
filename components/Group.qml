@@ -32,7 +32,6 @@ Item {
                               (modelData.total > 0 ? " [" + modelData.online + "/" + modelData.total + "]" : "")
                     iconSource: "../group.png"
                     iconPageSource:"GroupMessage.qml"
-                    isGroup: true
                     messageCount: modelData.messageCount
 
 

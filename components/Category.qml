@@ -15,7 +15,6 @@ Item {
     property int maxHeight
     property string iconSource
     property alias iconPageSource: loader.source
-    property bool isGroup: false
     property int messageCount: 0
     property int onlineCount: 0
 
@@ -150,7 +149,6 @@ Item {
         interactive: false
         delegate: Member {
             width: parent.width
-            isGroupMember: root.isGroup
         }
         onMovementEnded: {
             var visibleyPos = visibleArea.yPosition * contentHeight;
@@ -165,7 +163,7 @@ Item {
 
             for (var index = begIndex; index < endIndx + 1; index++) {
                 var o = model[index];
-                if (o.longnick == "") {
+                if (o.face == "") {
                     QQ.Client.getSimpleInfo(o.gid, o.uin);
                 }
             }

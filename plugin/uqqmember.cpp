@@ -3,9 +3,7 @@
 UQQMember::UQQMember(quint64 gid, const QString &uin, QObject *parent) :
     QObject(parent), m_uin(uin), m_gid(gid)
 {
-    setDetail(Q_NULLPTR);
-    setAccount("0");
-    setLevel(0);
+    setIsFriend(true);
     setVip(false);
     setVipLevel(0);
     setClientType(0);
@@ -13,6 +11,7 @@ UQQMember::UQQMember(quint64 gid, const QString &uin, QObject *parent) :
     setMessageCount(0);
     setFlag(0);
     setInputNotify(false);
+    setDetail(Q_NULLPTR);
 }
 
 QString UQQMember::uin() const {
@@ -22,16 +21,6 @@ void UQQMember::setUin(QString uin) {
     m_uin = uin;
 }
 
-QString UQQMember::account() const {
-    return m_account;
-}
-void UQQMember::setAccount(const QString &account) {
-    if (m_account != account) {
-        m_account = account;
-        emit accountChanged();
-    }
-}
-
 quint64 UQQMember::gid() const {
     return m_gid;
 }
@@ -39,6 +28,16 @@ void UQQMember::setGid(quint64 gid) {
     if (m_gid != gid) {
         m_gid = gid;
         emit gidChanged();
+    }
+}
+
+bool UQQMember::isFriend() const {
+    return m_isFriend;
+}
+void UQQMember::setIsFriend(bool isFriend) {
+    if (m_isFriend != isFriend) {
+        m_isFriend = isFriend;
+        emit isFriendChanged();
     }
 }
 
@@ -59,6 +58,16 @@ void UQQMember::setNickname(const QString &nickname) {
     if (m_nickname != nickname) {
         m_nickname = nickname;
         emit nicknameChanged();
+    }
+}
+
+QString UQQMember::card() const {
+    return m_card;
+}
+void UQQMember::setCard(QString card) {
+    if (m_card != card) {
+        m_card = card;
+        emit cardChanged();
     }
 }
 
@@ -130,46 +139,6 @@ void UQQMember::setInputNotify(bool inputNotify) {
     if (m_inputNotify != inputNotify) {
         m_inputNotify = inputNotify;
         emit inputNotifyChanged();
-    }
-}
-
-int UQQMember::level() const {
-    return m_level;
-}
-void UQQMember::setLevel(int level) {
-    if (level != m_level) {
-        m_level = level;
-        emit levelChanged();
-    }
-}
-
-int UQQMember::levelDays() const {
-    return m_levelDays;
-}
-void UQQMember::setLevelDays(int days) {
-    if (m_levelDays != days) {
-        m_levelDays = days;
-        emit levelDaysChanged();
-    }
-}
-
-int UQQMember::levelHours() const {
-    return m_levelHours;
-}
-void UQQMember::setLevelHours(int hours) {
-    if (m_levelHours != hours) {
-        m_levelHours = hours;
-        emit levelHoursChanged();
-    }
-}
-
-int UQQMember::levelRemainDays() const {
-    return m_levelRemainDays;
-}
-void UQQMember::setLevelRemainDays(int remainDays) {
-    if (m_levelRemainDays != remainDays) {
-        m_levelRemainDays = remainDays;
-        emit levelRemainDaysChanged();
     }
 }
 

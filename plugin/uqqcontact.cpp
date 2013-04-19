@@ -88,8 +88,12 @@ void UQQContact::setNickname(const QVariantList &list) {
 void UQQContact::setMemberDetail(const QString &uin, const QVariantMap &m) {
     UQQMember *member = this->member(uin);
     Q_CHECK_PTR(member);
+    UQQMemberDetail *detail = Q_NULLPTR;
 
-    UQQMemberDetail *detail = new UQQMemberDetail(member);
+    member->setNickname(m.value("nick").toString());
+
+    if ((detail = member->detail()) == Q_NULLPTR)
+        detail = new UQQMemberDetail(member);
     detail->setFaceid(m.value("face").toInt());
     detail->setOccupation(m.value("occupation").toString());
     detail->setPhone(m.value("phone").toString());
@@ -101,7 +105,6 @@ void UQQContact::setMemberDetail(const QString &uin, const QVariantMap &m) {
     detail->setCountry(m.value("country").toString());
     detail->setCity(m.value("city").toString());
     detail->setPersonal(m.value("personal").toString());
-    detail->setNickname(m.value("nick").toString());
     detail->setShengxiao(m.value("shengxiao").toInt());
     detail->setEmail(m.value("email").toString());
     detail->setProvince(m.value("province").toString());

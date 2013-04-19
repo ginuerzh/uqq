@@ -3,6 +3,11 @@
 UQQMemberDetail::UQQMemberDetail(QObject *parent) :
     QObject(parent)
 {
+    setAccount(0);
+    setLevel(0);
+    setLevelDays(0);
+    setLevelHours(0);
+    setLevelRemainDays(0);
     setFaceid(0);
     setBlood(0);
     setShengxiao(0);
@@ -12,6 +17,55 @@ UQQMemberDetail::UQQMemberDetail(QObject *parent) :
     setBirthday(QDateTime::currentDateTime());
 }
 
+quint64 UQQMemberDetail::account() const {
+    return m_account;
+}
+void UQQMemberDetail::setAccount(quint64 account) {
+    if (m_account != account) {
+        m_account = account;
+        emit accountChanged();
+    }
+}
+
+int UQQMemberDetail::level() const {
+    return m_level;
+}
+void UQQMemberDetail::setLevel(int level) {
+    if (level != m_level) {
+        m_level = level;
+        emit levelChanged();
+    }
+}
+
+int UQQMemberDetail::levelDays() const {
+    return m_levelDays;
+}
+void UQQMemberDetail::setLevelDays(int days) {
+    if (m_levelDays != days) {
+        m_levelDays = days;
+        emit levelDaysChanged();
+    }
+}
+
+int UQQMemberDetail::levelHours() const {
+    return m_levelHours;
+}
+void UQQMemberDetail::setLevelHours(int hours) {
+    if (m_levelHours != hours) {
+        m_levelHours = hours;
+        emit levelHoursChanged();
+    }
+}
+
+int UQQMemberDetail::levelRemainDays() const {
+    return m_levelRemainDays;
+}
+void UQQMemberDetail::setLevelRemainDays(int remainDays) {
+    if (m_levelRemainDays != remainDays) {
+        m_levelRemainDays = remainDays;
+        emit levelRemainDaysChanged();
+    }
+}
 
 int UQQMemberDetail::faceid() const {
     return m_faceid;
@@ -180,16 +234,6 @@ void UQQMemberDetail::setGender(int gender) {
     }
 }
 
-QString UQQMemberDetail::nickname() const {
-    return m_nickname;
-}
-void UQQMemberDetail::setNickname(const QString &nickname) {
-    if (m_nickname != nickname) {
-        m_nickname = nickname;
-        emit nicknameChanged();
-    }
-}
-
 UQQMemberDetail::Gender UQQMemberDetail::genderIndex(const QString &s) {
     Gender gender = Secret;
     if (s == "male") {
@@ -200,4 +244,14 @@ UQQMemberDetail::Gender UQQMemberDetail::genderIndex(const QString &s) {
         gender = Secret;
     }
     return gender;
+}
+
+QString UQQMemberDetail::token() const {
+    return m_token;
+}
+void UQQMemberDetail::setToken(const QString &token) {
+    if (m_token != token) {
+        m_token = token;
+        emit tokenChanged();
+    }
 }

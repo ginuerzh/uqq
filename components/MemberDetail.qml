@@ -39,11 +39,11 @@ Item {
             Field {
                 width: parent.width / 2
                 label: i18n.tr("QQ号码:")
-                value: modelData.account
+                value: modelData.detail ? modelData.detail.account : "-"
             }
             Field {
                 label: i18n.tr("等级:")
-                value: modelData.level
+                value: modelData.detail ? modelData.detail.level : "-"
             }
         }
 

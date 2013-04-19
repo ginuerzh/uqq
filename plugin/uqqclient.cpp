@@ -2,7 +2,7 @@
 #include "uqqmemberdetail.h"
 
 
-#define __TST
+//#define __TST
 
 #ifdef __TST
 #define TEST(func) \
@@ -10,7 +10,6 @@
 #else
 #define TEST(func)
 #endif
-
 
 UQQClient::UQQClient(QObject *parent)
     : QObject(parent) {
@@ -90,10 +89,10 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         verifySecondLogin(data);
         break;
     case GetMemberAccountAction:
-        parseAccount(p.toString(), data, GetMemberAccountAction);
+        parseAccount(p0.toULongLong(), p.toString(), data, GetMemberAccountAction);
         break;
     case GetGroupAccountAction:
-        parseAccount(p.toString(), data, GetGroupAccountAction);
+        parseAccount(p0.toULongLong(), p.toString(), data, GetGroupAccountAction);
         break;
     case GetLongNickAction:
         parseLongNick(p0.toULongLong(), p.toString(), data);
@@ -103,6 +102,9 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         break;
     case GetMemberInfoAction:
         parseMemberInfo(p.toString(), data);
+        break;
+    case GetStrangerInfoAction:
+        parseStrangerInfo(p0.toULongLong(), p.toString(), data);
         break;
     case GetUserFaceAction:
         saveFace(p0.toULongLong(), p.toString(), data);
@@ -124,6 +126,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
         break;
     case SendGroupSessionMessageAction:
         parseMessage(p.toString(), data);
+        break;
     case ChangeStatusAction:
         parseChangeStatus(p.toString(), data);
         break;
@@ -357,14 +360,13 @@ void UQQClient::onLoginSuccess(const QString &uin, const QString &status) {
     initConfig();
 
     UQQMember *user = new UQQMember(UQQCategory::IllegalCategoryId, uin, m_contact);
-    user->setAccount(uin);
     qDebug() << "login success! status:" << status;
     user->setStatus(UQQMember::statusIndex(status));
     m_contact->addMember(user);
 
     getUserFace();
     getLongNick(UQQCategory::IllegalCategoryId, uin);
-    getMemberDetail(uin);
+    getMemberDetail(UQQCategory::IllegalCategoryId, uin);
 
     loadContact();
     //emit loginSuccess();
@@ -372,51 +374,62 @@ void UQQClient::onLoginSuccess(const QString &uin, const QString &status) {
 
 void UQQClient::getSimpleInfo(quint64 gid, QString uin) {
     getFace(gid, uin);
-    getLongNick(gid, uin);
+
+    UQQMember *member = this->member(gid, uin);
+    if (member && member->isFriend())
+        getLongNick(gid, uin);
 }
 
-void UQQClient::getMemberDetail(QString uin) {
-    getMemberAccount(uin);
-    getMemberLevel(uin);
-    getMemberInfo(uin);
+void UQQClient::getMemberDetail(quint64 gid, QString uin) {
+    UQQMember *member = this->member(gid, uin);
+
+    if (member->isFriend()) {
+        getMemberInfo(uin);
+        getMemberLevel(uin);
+    } else {
+        getGroupSig(gid, uin);
+        getStrangerInfo(gid, uin);
+    }
+    getMemberAccount(gid, uin);
+
 }
 
-void UQQClient::testGetAccount(const QString &uin, Action action) {
+void UQQClient::testGetAccount(quint64 gid, const QString &uin, Action action) {
     QFile file("test/account.txt");
     file.open(QIODevice::ReadOnly);
     QByteArray data = file.readAll();
     file.close();
 
-    if (action == GetMemberAccountAction)
-        parseAccount(uin, data, action);
+    parseAccount(gid, uin, data, action);
 }
 
-void UQQClient::getMemberAccount(const QString &uin) {
-    getAccount(uin, GetMemberAccountAction);
+void UQQClient::getMemberAccount(quint64 gid, const QString &uin) {
+    getAccount(gid, uin, GetMemberAccountAction);
 }
 
 void UQQClient::getGroupAccount(const QString &uin) {
-    getAccount(uin, GetGroupAccountAction);
+    getAccount(UQQCategory::IllegalCategoryId, uin, GetGroupAccountAction);
 }
 
-void UQQClient::getAccount(const QString &uin, Action action) {
-    TEST(testGetAccount(uin, action))
+void UQQClient::getAccount(quint64 gid, const QString &uin, Action action) {
+    TEST(testGetAccount(gid, uin, action))
 
-    QString url = QString("http://s.web2.qq.com/api/get_friend_uin2?tuin=%1&verifysession=&type=4&code=&vfwebqq=%2&t=%3")
+    QString url = QString("http://s.web2.qq.com/api/get_friend_uin2?tuin=%1&verifysession=&type=1&code=&vfwebqq=%2&t=%3")
             .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, action);
+    request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
     request.setUrl(QUrl(url));
-    request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
+    request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->get(request);
 }
 
 /*
  *{"retcode":0,"result":{"uiuin":"","account":123456,"uin":12345668}}
  */
-void UQQClient::parseAccount(const QString &uin, const QByteArray &data, Action action) {
+void UQQClient::parseAccount(quint64 gid, const QString &uin, const QByteArray &data, Action action) {
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
 
@@ -424,9 +437,15 @@ void UQQClient::parseAccount(const QString &uin, const QByteArray &data, Action 
         m = m.value("result").toMap();
 
         if (action == GetMemberAccountAction) {
-            UQQMember *member = m_contact->member(uin);
+            UQQMember *member = this->member(gid, uin);
             Q_CHECK_PTR(member);
-            member->setAccount(m.value("account").toString());
+
+            UQQMemberDetail *detail = Q_NULLPTR;
+            if ((detail = member->detail()) == Q_NULLPTR) {
+                detail = new UQQMemberDetail(member);
+                member->setDetail(detail);
+            }
+            member->detail()->setAccount(m.value("account").toULongLong());
         } else {
             UQQCategory *group = m_group->getGroupByCode(uin.toULongLong());
             Q_CHECK_PTR(group);
@@ -518,15 +537,22 @@ void UQQClient::parseMemberLevel(const QString &uin, const QByteArray &data) {
     //qDebug() << data;
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
-    UQQMember *member;
+    UQQMember *member = Q_NULLPTR;
+    UQQMemberDetail *detail = Q_NULLPTR;
+
     if (m.value("retcode", DefaultError).toInt() == NoError) {
         m = m.value("result").toMap();
         member = m_contact->member(uin);
         Q_CHECK_PTR(member);
-        member->setLevel(m.value("level").toInt());
-        member->setLevelDays(m.value("days").toInt());
-        member->setLevelHours(m.value("hours").toInt());
-        member->setLevelRemainDays(m.value("remainDays").toInt());
+
+        if ((detail = member->detail()) == Q_NULLPTR) {
+            detail = new UQQMemberDetail(member);
+            member->setDetail(detail);
+        }
+        member->detail()->setLevel(m.value("level").toInt());
+        member->detail()->setLevelDays(m.value("days").toInt());
+        member->detail()->setLevelHours(m.value("hours").toInt());
+        member->detail()->setLevelRemainDays(m.value("remainDays").toInt());
     } else {
         qDebug() << "parseMemberLevel:" << data;
     }
@@ -577,6 +603,44 @@ void UQQClient::parseMemberInfo(const QString &uin, const QByteArray &data) {
         qDebug() << "parseMemberInfo:" << data;
     }
 }
+
+void UQQClient::testGetStrangerInfo(quint64 gid, const QString &uin) {
+    QFile file("test/user.txt");
+    file.open(QIODevice::ReadOnly);
+    QByteArray data = file.readAll();
+    file.close();
+
+    parseStrangerInfo(gid, uin, data);
+}
+
+void UQQClient::getStrangerInfo(quint64 gid, const QString &uin) {
+    TEST(testGetStrangerInfo(gid, uin))
+
+    QString url = QString("http://s.web2.qq.com/api/get_stranger_info2?tuin=%1&verifysession=&gid=0&code=&vfwebqq=%2&t=%3")
+            .arg(uin,
+                 getLoginInfo("vfwebqq").toString(),
+                 getTimestamp());
+    QNetworkRequest request;
+
+    request.setAttribute(QNetworkRequest::User, GetStrangerInfoAction);
+    request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
+    request.setAttribute(QNetworkRequest::UserMax, uin);
+    request.setUrl(QUrl(url));
+    request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
+    m_manager->get(request);
+}
+
+void UQQClient::parseStrangerInfo(quint64 gid, const QString &uin, const QByteArray &data) {
+    QJsonObject obj = QJsonDocument::fromJson(data).object();
+    QVariantMap m = obj.toVariantMap();
+
+    if (m.value("retcode", DefaultError).toInt() == NoError) {
+        m_group->setMemberDetail(gid, uin, m.value("result").toMap());
+    } else {
+        qDebug() << "parseMemberInfo:" << data;
+    }
+}
+
 
 UQQMember *UQQClient::member(quint64 gid, const QString &uin) {
     UQQMember *member = Q_NULLPTR;
@@ -671,7 +735,7 @@ void UQQClient::parseChangeStatus(const QString &status, const QByteArray &data)
 
     int retcode = m.value("retcode", DefaultError).toInt();
     if (retcode == NoError) {
-        qDebug() << "change status ok";
+        qDebug() << "change status ok:" << status;
         QString uin = getLoginInfo("uin").toString();
         UQQMember *user = m_contact->member(uin);
         if (user) {
@@ -702,48 +766,38 @@ void UQQClient::testLoadContact() {
 }
 
 QString UQQClient::hashFriends(char *uin, char *ptwebqq) {
-    int alen= strlen(uin);
-    int *c = (int *)malloc(sizeof(int)*strlen(uin));
-    int d,b,k,clen;
-    int elen=strlen(ptwebqq);
-    char* e = ptwebqq;
-    int h;
-    int i;
-    for(d=0;d<alen;d++){
-        c[d]=uin[d]-'0';
-    }
-    //qDebug() << uin << ptwebqq;
-    clen = d;
-    for(b=0,k=-1,d=0;d<clen;d++){
-        b += c[d];
-        b %= elen;
-        int f = 0;
-        if(b+4>elen){
-            int g;
-            for(g=4+b-elen,h=0;h<4;h++)
-                f |= h<g?((e[b+h]&255)<<(3-h)*8):((e[h-g]&255)<<(3-h)*8);
+    size_t len = strlen(ptwebqq)+strlen("password error")+3;
+    char* a = (char *)malloc(len);
+    memset(a, 0, len);
+    const char* b = uin;
+    strcat(strcpy(a,ptwebqq),"password error");
+    size_t alen = strlen(a);
+    len = 2048;
+    char* s = (char *)malloc(len);
+    memset(s, 0, len);
+    int *j = (int *)malloc(sizeof(int)*alen);
+    for(;;){
+        if(strlen(s)<=alen){
+            if(strcat(s,b),strlen(s)==alen) break;
         }else{
-            for(h=0;h<4;h++)
-                f |= (e[b+h]&255)<<(3-h)*8;
+            s[alen]='\0';
+            break;
         }
-        k ^= f;
     }
-    memset(c,0,sizeof(int)*alen);
-    c[0] = k >> 24&255;
-    c[1] = k >> 16&255;
-    c[2] = k >> 8&255;
-    c[3] = k & 255;
-    char* ch = QString("0123456789ABCDEF").toLatin1().data();
-    char* ret = (char *)malloc(10);
-    memset(ret,0,10);
-    for(b=0,i=0;b<4;b++){
-        ret[i++]=ch[c[b]>>4&15];
-        ret[i++]=ch[c[b]&15];
+    size_t d;
+    for(d=0;d<strlen(s);d++){
+        j[d]=s[d]^a[d];
     }
-    QString result(ret);
-    //qDebug() << "result" << ret;
-    free(c);
-    free(ret);
+    const char* ch = "0123456789ABCDEF";
+    s[0]=0;
+    for(d=0;d<alen;d++){
+        s[2*d]=ch[j[d]>>4&15];
+        s[2*d+1]=ch[j[d]&15];
+    }
+    free(a);
+    free(j);
+    QString result(s);
+    free(s);
     return result;
 }
 
@@ -893,7 +947,7 @@ void UQQClient::parseGroupInfo(quint64 gid, const QByteArray &data) {
     QVariantMap m = obj.toVariantMap();
 
     if (m.value("retcode", DefaultError).toInt() == NoError) {
-        m_group->setGroupInfo(gid, m.value("result").toMap());
+        m_group->setGroupDetail(gid, m.value("result").toMap(), m_contact);
         emit groupReady(gid);
 
         UQQCategory *group = m_group->getGroupById(gid);
@@ -978,7 +1032,7 @@ void UQQClient::testSendBuddyMessage(QString dstUin, const QString &content) {
 
     UQQMember *user = m_contact->member(fromUin);
     Q_CHECK_PTR(user);
-    message->setName(user->detail()->nickname());
+    message->setName(user->nickname());
     member->addMessage(message);
 }
 
@@ -1022,7 +1076,7 @@ void UQQClient::sendBuddyMessage(QString dstUin, QString content) {
 
     UQQMember *user = m_contact->member(fromUin);
     Q_CHECK_PTR(user);
-    message->setName(user->detail()->nickname());
+    message->setName(user->nickname());
     member->addMessage(message);
 }
 
@@ -1032,7 +1086,7 @@ void UQQClient::parseMessage(const QString &uin, const QByteArray &data) {
 
     int retcode = m.value("retcode", DefaultError).toInt();
     if (retcode == NoError) {
-        qDebug() << "send to" << uin << "ok";
+        qDebug() << QTime::currentTime().toString("hh:mm:ss") << "send to" << uin << "ok";
     } else {
         qWarning() << "parseMessage:" << data;
     }
@@ -1154,7 +1208,7 @@ QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const 
 void UQQClient::testSendGroupSessionMessage(quint64 gid, QString dstUin, QString content) {
     QString p = "r=" + sessionMessageData(gid, dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
-    qDebug() << "group session message:" << p;
+    //qDebug() << "group session message:" << p;
 
     QString fromUin = getLoginInfo("uin").toString();
     UQQCategory *group = m_group->getGroupById(gid);
@@ -1182,6 +1236,17 @@ void UQQClient::sendGroupSessionMessage(quint64 gid, QString dstUin, QString con
     QString p = "r=" + sessionMessageData(gid, dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
 
+    QString fromUin = getLoginInfo("uin").toString();
+    UQQCategory *group = m_group->getGroupById(gid);
+    Q_CHECK_PTR(group);
+    UQQMember *member = group->member(dstUin);
+    Q_CHECK_PTR(member);
+
+    if (member->groupSig().isEmpty()) {
+        qWarning() << "group sig is empty";
+        return;
+    }
+
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, SendGroupSessionMessageAction);
@@ -1191,12 +1256,6 @@ void UQQClient::sendGroupSessionMessage(quint64 gid, QString dstUin, QString con
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
-
-    QString fromUin = getLoginInfo("uin").toString();
-    UQQCategory *group = m_group->getGroupById(gid);
-    Q_CHECK_PTR(group);
-    UQQMember *member = group->member(dstUin);
-    Q_CHECK_PTR(member);
 
     UQQMessage *message = new UQQMessage(member);
     message->setType(TYPE_SEND);

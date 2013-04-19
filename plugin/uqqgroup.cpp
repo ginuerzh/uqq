@@ -39,10 +39,22 @@ void UQQGroup::setGroupMarkList(const QVariantList &list) {
     }
 }
 
-void UQQGroup::setGroupInfo(quint64 gid, const QVariantMap &map) {
+void UQQGroup::setGroupDetail(quint64 gid, const QVariantMap &map, UQQContact *contact) {
     UQQCategory *group = getGroupById(gid);
     Q_CHECK_PTR(group);
+    QVariantMap m = map.value("ginfo").toMap();
 
+    setGroupInfo(group, map);
+    setGroupMembers(group, map.value("minfo").toList(), contact);
+    setMembersFlags(group, m.value("members").toList());
+    setMembersStats(group, map.value("stats").toList());
+    setMembersCards(group, map.value("cards").toList());
+    setVipInfo(group, map.value("vipinfo").toList());
+
+    group->setGroupReady(true);
+}
+
+void UQQGroup::setGroupInfo(UQQCategory *group, const QVariantMap &map) {
     QVariantMap m = map.value("ginfo").toMap();
     UQQGroupInfo *groupInfo = new UQQGroupInfo(group);
     groupInfo->setFaceid(m.value("face").toInt());
@@ -56,33 +68,34 @@ void UQQGroup::setGroupInfo(quint64 gid, const QVariantMap &map) {
     groupInfo->setOwner(m.value("owner").toString());
     group->setGroupInfo(groupInfo);
 
-    setGroupMembers(group, map.value("minfo").toList());
-    setMembersFlags(group, m.value("members").toList());
-    setMembersStats(group, map.value("stats").toList());
-    setMembersCards(group, map.value("cards").toList());
-    setVipInfo(group, map.value("vipinfo").toList());
-
-    group->setGroupReady(true);
 }
 
-void UQQGroup::setGroupMembers(UQQCategory *group, const QVariantList &members) {
+void UQQGroup::setGroupMembers(UQQCategory *group, const QVariantList &members, UQQContact *contact) {
     QVariantMap m;
+    QString uin;
     UQQMember *member;
-    UQQMemberDetail *detail;
+    //UQQMemberDetail *detail;
     //qDebug() << "set group members" << group->id();
     for (int i = 0; i < members.size(); i++) {
         m = members.at(i).toMap();
-        member = new UQQMember(group->id(),m.value("uin").toString(), this);
+        uin = m.value("uin").toString();
+        if ((member = contact->member(uin)) != Q_NULLPTR) {
+            qDebug() << "set group member:" << uin << "in contact";
+            group->addMember(member);
+            continue;
+        }
 
-        detail = new UQQMemberDetail(member);
-        detail->setNickname(m.value("nick").toString());
+        member = new UQQMember(group->id(), uin, this);
         member->setNickname(m.value("nick").toString());
+        member->setIsFriend(false);
+        /*  // this is not needed
+        detail = new UQQMemberDetail(member);
         detail->setGender(UQQMemberDetail::genderIndex(m.value("gender").toString()));
         detail->setCountry(m.value("country").toString());
         detail->setProvince(m.value("province").toString());
         detail->setCity(m.value("city").toString());
         member->setDetail(detail);
-
+        */
         group->addMember(member);
     }
     //qDebug() << "group members:" << members.size();
@@ -143,10 +156,53 @@ void UQQGroup::setMembersCards(UQQCategory *group, const QVariantList &cards) {
         Q_CHECK_PTR(member);
         if (member) {
             //qDebug() << m.value("card").toString();
-            member->setMarkname(m.value("card").toString());
+            member->setCard(m.value("card").toString());
         }
     }
 }
+
+void UQQGroup::setMemberDetail(quint64 gid, const QString &uin, const QVariantMap &m) {
+    UQQMemberDetail *detail = Q_NULLPTR;
+
+    UQQCategory *group = getGroupById(gid);
+    Q_CHECK_PTR(group);
+    UQQMember *member = group->member(uin);
+    Q_CHECK_PTR(member);
+    if ((detail = member->detail()) == Q_NULLPTR)
+        detail = new UQQMemberDetail(member);
+
+    detail->setFaceid(m.value("face").toInt());
+    detail->setOccupation(m.value("occupation").toString());
+    detail->setPhone(m.value("phone").toString());
+    detail->setAllow(m.value("allow").toBool());
+    detail->setCollege(m.value("college").toString());
+    detail->setConstel(m.value("constel").toInt());
+    detail->setBlood(m.value("blood").toInt());
+    detail->setHomepage(m.value("homepage").toString());
+    detail->setCountry(m.value("country").toString());
+    detail->setCity(m.value("city").toString());
+    detail->setPersonal(m.value("personal").toString());
+    member->setNickname(m.value("nick").toString());    // nickname not in detail
+    detail->setShengxiao(m.value("shengxiao").toInt());
+    detail->setEmail(m.value("email").toString());
+    detail->setProvince(m.value("province").toString());
+    detail->setGender(UQQMemberDetail::genderIndex(m.value("gender").toString()));
+    detail->setMobile(m.value("mobile").toString());
+    detail->setToken(m.value("token").toString());
+
+    QVariantMap birth = m.value("birthday").toMap();
+    int year = birth.value("year").toInt();
+    int month = birth.value("month").toInt();
+    int day = birth.value("day").toInt();
+    if (QDate::isValid(year, month, day)) {
+        QDateTime birth;
+        birth.setDate(QDate(year, month, day));
+        detail->setBirthday(birth);
+    }
+
+    member->setDetail(detail);
+}
+
 
 QList<UQQCategory *> &UQQGroup::groups() {
      return m_groups;
