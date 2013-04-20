@@ -130,9 +130,10 @@ QList<UQQMember *> UQQCategory::sortedMembers() {
 
 void UQQCategory::addMember(UQQMember *member) {
     Q_CHECK_PTR(member);
-
-    m_members.insert(member->uin(), member);
-    emit totalChanged();
+    if (member) {
+        m_members.insert(member->uin(), member);
+        emit totalChanged();
+    }
 }
 
 int UQQCategory::removeMember(UQQMember *member) {

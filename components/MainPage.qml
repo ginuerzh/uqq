@@ -33,7 +33,7 @@ MainView {
         target: QQ.Client
         onMemberMessageReceived: newMsgAudio.play();
         onGroupMessageReceived: newMsgAudio.play();
-        onGroupSessionMessageReceived: newMsgAudio.play();
+        onSessionMessageReceived: newMsgAudio.play();
         onBuddyOnline: onlineAudio.play();
         onPollReceived: pollTimer.restart();
     }
@@ -44,7 +44,7 @@ MainView {
         Tab {
             id: homePageTab
             objectName: "homePage"
-            title: i18n.tr("QQ")
+            title: i18n.tr("QQMe")
             page: HomePage {
                 anchors.fill: parent
                 anchors.topMargin: units.gu(9.5)

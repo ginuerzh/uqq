@@ -13,6 +13,7 @@ public:
 
     enum CategoryId {
         BuddyCategoryId,
+        StrangerCategoryId = 0xFFFFFFFE,
         IllegalCategoryId = 0xFFFFFFFF
     };
 

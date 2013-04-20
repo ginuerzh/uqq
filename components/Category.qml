@@ -149,15 +149,18 @@ Item {
         }
         onMovementEnded: {
             var begIndex = indexAt(0, visibleArea.yPosition * contentHeight);
-            var endIndx = indexAt(0, (visibleArea.yPosition + visibleArea.heightRatio) * contentHeight);
-            //console.log(visibleyPos + "," + visibleHeight + "," + contentHeight);
-            //console.log("index(" + begIndex + ", " + endIndx + ")");
-            if (begIndex < 0) begIndex = 0;
-            if (endIndx < 0) endIndx = count - 1;
+            var endIndex = indexAt(0, visibleArea.yPosition * contentHeight + height - units.gu(1));
+            loadSimpleInfo(begIndex, endIndex);
+        }
 
-            for (var index = begIndex; index < endIndx + 1; index++) {
+        function loadSimpleInfo(begIndex, endIndex) {
+            console.log("index(" + begIndex + ", " + endIndex + ")");
+            if (begIndex < 0) begIndex = 0;
+            if (endIndex < 0 || endIndex >= count) endIndex = count - 1;
+
+            for (var index = begIndex; index < endIndex + 1; index++) {
                 var o = model[index];
-                if (o.face == "") {
+                if (o && o.face == "") {
                     QQ.Client.getSimpleInfo(o.gid, o.uin);
                 }
             }
@@ -223,6 +226,11 @@ Item {
             SequentialAnimation {
                 PropertyAction { target: root; property: "opened"; value: true }
                 NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                ScriptAction {
+                    script: {
+                        memberView.loadSimpleInfo(0, memberView.indexAt(0, memberView.height - units.gu(1)));
+                    }
+                }
             }
         },
         Transition {

@@ -44,6 +44,7 @@ void UQQGroup::setGroupMarkList(const QVariantList &list) {
 void UQQGroup::setGroupDetail(quint64 gid, const QVariantMap &map, UQQContact *contact) {
     UQQCategory *group = getGroupById(gid);
     Q_CHECK_PTR(group);
+    if (!group) return;
     QVariantMap m = map.value("ginfo").toMap();
 
     setGroupInfo(group, map);
@@ -106,7 +107,7 @@ void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
             member->setClientType(m.value("client_type").toInt());
             member->setStatus(m.value("stat").toInt() / 10);
             //group->incOnline();   // the online info has some problem
-            qDebug() << "group member" << member->nickname() << "status:" << member->status();
+            //qDebug() << "group member" << member->nickname() << "status:" << member->status();
         }
     }
 

@@ -1,7 +1,6 @@
 #include "uqqclient.h"
 #include "uqqmemberdetail.h"
 
-
 //#define __TST
 
 #ifdef __TST
@@ -19,9 +18,11 @@ UQQClient::UQQClient(QObject *parent)
 
     initClient();
 
+#ifndef __TST
     m_manager = new QNetworkAccessManager(this);
     QObject::connect(m_manager, &QNetworkAccessManager::finished,
                     this, &UQQClient::onFinished);
+#endif
 
     addLoginInfo("aid", QVariant("1003903"));  // appid
     addLoginInfo("clientid", getClientId());   // clientid
@@ -57,7 +58,7 @@ void UQQClient::initConfig() {
 
     QDir path;
     if (!path.mkpath(facePath) || !path.mkpath(groupPath) || !path.mkpath(groupFacePath))
-        qDebug() << "Error: make path";
+        qCritical() << "Error: make path";
 }
 
 void UQQClient::onFinished(QNetworkReply *reply) {
@@ -124,7 +125,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
     case SendGroupMessageAction:
         parseMessage(p.toString(), data);
         break;
-    case SendGroupSessionMessageAction:
+    case SendSessionMessageAction:
         parseMessage(p.toString(), data);
         break;
     case ChangeStatusAction:
@@ -142,7 +143,7 @@ void UQQClient::onFinished(QNetworkReply *reply) {
                       data);
         break;
     default:
-        qDebug() << "Unknown action:" << action;
+        qWarning() << "Unknown action:" << action;
     }
 
     reply->deleteLater();
@@ -388,19 +389,22 @@ void UQQClient::getSimpleInfo(quint64 gid, QString uin) {
     getFace(gid, uin);
 
     UQQMember *member = this->member(gid, uin);
+    Q_CHECK_PTR(member);
     if (member && member->isFriend())
         getLongNick(gid, uin);
 }
 
 void UQQClient::getMemberDetail(quint64 gid, QString uin) {
     UQQMember *member = this->member(gid, uin);
+    Q_CHECK_PTR(member);
+    if (!member) return;
 
     if (member->isFriend()) {
         getMemberInfo(uin);
         getMemberLevel(uin);
     } else {
-        //getGroupSig(gid, uin);
         getStrangerInfo(gid, uin);
+        getGroupSig(gid, uin);
     }
     getMemberAccount(gid, uin);
 
@@ -452,7 +456,7 @@ void UQQClient::parseAccount(quint64 gid, const QString &uin, const QByteArray &
         if (action == GetMemberAccountAction) {
             UQQMember *member = this->member(gid, uin);
             Q_CHECK_PTR(member);
-
+            if (!member) return;
             UQQMemberDetail *detail = Q_NULLPTR;
             if ((detail = member->detail()) == Q_NULLPTR) {
                 detail = new UQQMemberDetail(member);
@@ -462,8 +466,10 @@ void UQQClient::parseAccount(quint64 gid, const QString &uin, const QByteArray &
         } else {
             UQQCategory *group = m_group->getGroupByCode(uin.toULongLong());
             Q_CHECK_PTR(group);
-            group->setAccount(m.value("account").toULongLong());
-            qDebug() << "request group account done, group" << gid << "account:" << group->account();
+            if (group) {
+                group->setAccount(m.value("account").toULongLong());
+                qDebug() << "request group account done, group" << gid << "account:" << group->account();
+            }
         }
     } else {
         qDebug() << "parseAccount:" << data;
@@ -508,6 +514,7 @@ void UQQClient::parseLongNick(quint64 gid, const QString &uin, const QByteArray 
             (list = m.value("result").toList()).size() > 0) {
         m = list.at(0).toMap();
         member = this->member(gid, uin);
+        Q_CHECK_PTR(member);
         if (member)
             member->setLongnick(m.value("lnick").toString());
     } else {
@@ -614,7 +621,9 @@ void UQQClient::parseMemberInfo(const QString &uin, const QByteArray &data) {
 
     if (m.value("retcode", DefaultError).toInt() == NoError) {
         member = this->member(UQQCategory::IllegalCategoryId, uin);
-        setMemberDetail(member, m.value("result").toMap());
+        Q_CHECK_PTR(member);
+        if (member)
+            setMemberDetail(member, m.value("result").toMap());
     } else {
         qDebug() << "parseMemberInfo:" << data;
     }
@@ -664,7 +673,6 @@ void UQQClient::parseStrangerInfo(quint64 gid, const QString &uin, const QByteAr
             m_contact->addMember(member);
         }
         setMemberDetail(member, m.value("result").toMap());
-        getGroupSig(gid, uin);
     } else {
         qDebug() << "parseStrangerInfo:" << data;
     }
@@ -674,6 +682,7 @@ void UQQClient::setMemberDetail(UQQMember *member, const QVariantMap &m) {
     UQQMemberDetail *detail = Q_NULLPTR;
     qDebug() << "set member detail...";
     member->setNickname(m.value("nick").toString());
+    //member->setStatus(m.value("stat").toInt() / 10);
 
     if ((detail = member->detail()) == Q_NULLPTR)
         detail = new UQQMemberDetail(member);
@@ -720,10 +729,6 @@ UQQMember *UQQClient::member(quint64 gid, const QString &uin) {
             member = cat->member(uin);
         }
     }
-
-    //Q_CHECK_PTR(member);
-    //if (!member)
-    //    qDebug() << "member" << gid << uin << "not found!";
     return member;
 }
 
@@ -734,6 +739,7 @@ void UQQClient::getUserFace() {
 void UQQClient::testGetFace(quint64 gid, const QString &uin) {
     QString path = "../121830387.bmp";
     UQQMember *member = this->member(gid, uin);
+    Q_CHECK_PTR(member);
     if (member) member->setFace(path);
 }
 
@@ -757,6 +763,7 @@ void UQQClient::getFace(quint64 gid, const QString &uin, int cache, int type) {
 void UQQClient::saveFace(quint64 gid, const QString &uin, const QByteArray &data) {
     QString facePath = getConfig("facePath").toString();
     UQQMember *member = this->member(gid, uin);
+    Q_CHECK_PTR(member);
     if (!member) return;
     QString path = facePath + "/" + uin + imageFormat(data);
 
@@ -990,6 +997,8 @@ void UQQClient::loadGroupInfo(quint64 gid) {
 
     UQQCategory *group = m_group->getGroupById(gid);
     Q_CHECK_PTR(group);
+    if (!group) return;
+
     quint32 gcode = group->code();
     QString url = QString("http://s.web2.qq.com/api/get_group_info_ext2?gcode=%1&vfwebqq=%2&t=%3")
             .arg(QString::number(gcode),
@@ -1012,9 +1021,11 @@ void UQQClient::parseGroupInfo(quint64 gid, const QByteArray &data) {
         m_group->setGroupDetail(gid, m.value("result").toMap(), m_contact);
         emit groupReady(gid);
 
+        qDebug() << "request group" << gid << "info done.";
+
         UQQCategory *group = m_group->getGroupById(gid);
         Q_CHECK_PTR(group);
-        qDebug() << "request group" << gid << "info done.";
+        if (!group) return;
         getGroupAccount(QString::number(group->code()));
     } else {
         qDebug() << "parseGroupInfo:" << data;
@@ -1163,6 +1174,7 @@ void UQQClient::testSendGroupMessage(quint64 gid, const QString &content) {
     QString fromUin = getLoginInfo("uin").toString();
     UQQCategory *group = m_group->getGroupById(gid);
     Q_CHECK_PTR(group);
+    if (!group) return;
     UQQMessage *message = new UQQMessage(group);
     message->setType(TYPE_SEND);
     message->setSrc(fromUin);
@@ -1173,7 +1185,12 @@ void UQQClient::testSendGroupMessage(quint64 gid, const QString &content) {
 }
 
 void UQQClient::sendGroupMessage(quint64 gid, QString content) {
+    qDebug() << QTime::currentTime().toString("hh:mm:ss") << "send group message...";
     TEST(testSendGroupMessage(gid, content))
+
+    UQQCategory *group = m_group->getGroupById(gid);
+    Q_CHECK_PTR(group);
+    if (!group) return;
 
     QString url = QString("http://d.web2.qq.com/channel/send_qun_msg2");
     QString p = "r=" + groupMessageData(QString::number(gid), content);
@@ -1190,8 +1207,7 @@ void UQQClient::sendGroupMessage(quint64 gid, QString content) {
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
 
     QString fromUin = getLoginInfo("uin").toString();
-    UQQCategory *group = m_group->getGroupById(gid);
-    Q_CHECK_PTR(group);
+
     UQQMessage *message = new UQQMessage(group);
     message->setType(TYPE_SEND);
     message->setSrc(fromUin);
@@ -1239,6 +1255,7 @@ void UQQClient::parseGroupSig(quint64 gid, const QString &dstUin, const QByteArr
     if (m.value("retcode", DefaultError).toInt() == NoError) {
         m = m.value("result").toMap();
         member = this->member(gid, dstUin);
+        Q_CHECK_PTR(member);
         if (member)
             member->setGroupSig(m.value("value").toString());
         qDebug() << "request group sig done.";
@@ -1267,7 +1284,7 @@ QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const 
     return p;
 }
 
-void UQQClient::testSendGroupSessionMessage(quint64 gid, QString dstUin, QString content) {
+void UQQClient::testSendSessionMessage(quint64 gid, QString dstUin, QString content) {
     QString p = "r=" + sessionMessageData(gid, dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
     //qDebug() << "group session message:" << p;
@@ -1291,18 +1308,21 @@ void UQQClient::testSendGroupSessionMessage(quint64 gid, QString dstUin, QString
     member->addMessage(message);
 }
 
-void UQQClient::sendGroupSessionMessage(quint64 gid, QString dstUin, QString content) {
-    TEST(testSendGroupSessionMessage(gid, dstUin, content))
-
-    QString url = QString("http://d.web2.qq.com/channel/send_sess_msg2");
-    QString p = "r=" + sessionMessageData(gid, dstUin, content);
-    p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
+void UQQClient::sendSessionMessage(quint64 gid, QString dstUin, QString content) {
+    qDebug() << "send session message...";
+    TEST(testSendSessionMessage(gid, dstUin, content))
 
     QString fromUin = getLoginInfo("uin").toString();
     UQQCategory *group = m_group->getGroupById(gid);
     Q_CHECK_PTR(group);
+    if (!group) return;
     UQQMember *member = group->member(dstUin);
     Q_CHECK_PTR(member);
+    if (!member) return;
+
+    QString url = QString("http://d.web2.qq.com/channel/send_sess_msg2");
+    QString p = "r=" + sessionMessageData(gid, dstUin, content);
+    p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
 
     if (member->groupSig().isEmpty()) {
         qWarning() << "group sig is empty";
@@ -1311,7 +1331,7 @@ void UQQClient::sendGroupSessionMessage(quint64 gid, QString dstUin, QString con
 
     QNetworkRequest request;
 
-    request.setAttribute(QNetworkRequest::User, SendGroupSessionMessageAction);
+    request.setAttribute(QNetworkRequest::User, SendSessionMessageAction);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, dstUin);
     request.setUrl(QUrl(url));
@@ -1391,8 +1411,8 @@ void UQQClient::parsePoll(const QByteArray &data) {
 
     int retcode = m.value("retcode", DefaultError).toInt();
     if (retcode == NoError) {
-         result = m.value("result").toList();
-         for (int i = 0; i < result.size(); i++) {
+        result = m.value("result").toList();
+        for (int i = 0; i < result.size(); i++) {
             m = result.at(i).toMap();
             pollType = m.value("poll_type").toString();
             m = m.value("value").toMap();
@@ -1407,7 +1427,7 @@ void UQQClient::parsePoll(const QByteArray &data) {
                 pollGroupMessage(m);
             } else if (pollType == "sess_message") {
                 //qDebug() << data;
-                pollGroupSessionMessage(m);
+                pollSessionMessage(m);
             } else if (pollType == "input_notify") {
                 //qDebug() << data;
                 pollInputNotify(m);
@@ -1415,8 +1435,7 @@ void UQQClient::parsePoll(const QByteArray &data) {
                 qWarning() << "Unknown poll type:" << pollType;
                 qDebug() << data;
             }
-         }
-
+        }
     } else if (retcode == PollNormalReturn) {
         //qDebug() << "poll normal return";
     } else if (retcode == PollOfflineError) {
@@ -1493,6 +1512,7 @@ void UQQClient::pollGroupMessage(const QVariantMap &m) {
     quint64 gcode = m.value("group_code").toULongLong();
     UQQCategory *group = m_group->getGroupByCode(gcode);
     Q_CHECK_PTR(group);
+    if (!group) return;
 
     UQQMessage *message = new UQQMessage(group);
 
@@ -1519,7 +1539,7 @@ void UQQClient::pollGroupMessage(const QVariantMap &m) {
     emit groupMessageReceived(group->id());
 }
 
-void UQQClient::pollGroupSessionMessage(const QVariantMap &m) {
+void UQQClient::pollSessionMessage(const QVariantMap &m) {
     QString content;
     QString fromUin = m.value("from_uin").toString();
     quint64 gid = m.value("id").toULongLong();
@@ -1546,11 +1566,11 @@ void UQQClient::pollGroupSessionMessage(const QVariantMap &m) {
 
     if ((member = this->member(gid, fromUin)) != Q_NULLPTR) {
         member->addMessage(message);
-        //emit groupSessionMessageReceived(group->id());
+        //emit sessionMessageReceived(group->id());
     } else {
         m_contact->addSessMessage(message);
         getStrangerInfo(gid, fromUin);
-        emit memberMessageReceived(m_contact->categories().last()->id());
+        emit memberMessageReceived(UQQCategory::StrangerCategoryId);
     }
 }
 
@@ -1593,12 +1613,14 @@ QList<QObject *> UQQClient::getMember(QString uin) {
 }
 
 QList<QObject *> UQQClient::getCategoryMembers(quint64 catid) {
+    //qDebug() << "get category members...";
     QList<QObject *> list;
     const QList<UQQMember *> &members = m_contact->membersInCategory(catid, true);
 
     for (int i = 0; i < members.size(); i++) {
         list.append(members.at(i));
     }
+    //qDebug() << "category members:" << list.size();
     return list;
 }
 

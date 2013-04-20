@@ -49,14 +49,24 @@ Item {
                     }
                 }
 
+                Item {
+                    id: callerItem
+                    width: units.gu(1)
+                    height: width
+                    anchors {
+                        left: parent.left
+                        bottom: parent.bottom
+                        leftMargin: units.gu(4)
+                    }
+                }
+
                 onIconClicked: {
-                    statusPopover.caller = title;
+                    statusPopover.caller = callerItem;
                     statusPopover.show();
                 }
 
                 StatusPopover {
                     id: statusPopover
-
                     onTriggered: {
                         QQ.Client.changeStatus(status);
                     }

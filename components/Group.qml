@@ -52,7 +52,7 @@ Item {
                                 group.loaded = true;
                             }
                         }
-                        onGroupSessionMessageReceived: {
+                        onSessionMessageReceived: {
                             if (gid == modelData.id && group.state == "")
                                     group.newMsg = true;
                         }

@@ -111,15 +111,18 @@ void UQQContact::setCategories(const QVariantList &list) {
         category->setId(++index);
         m_categories.append(category);
     }
+    index++;
     category = new UQQCategory();
     category->setName("陌生人");
-    category->setId(++index);
+    category->setId(UQQCategory::StrangerCategoryId);
     m_categories.append(category);
     qDebug() << "set categories done, total categories:" << index + 1;
 }
 
 void UQQContact::addMemberToCategory(quint64 id, UQQMember *member) {
     Q_CHECK_PTR(member);
+    if (!member) return;
+
     if (id == UQQCategory::IllegalCategoryId)
         return;
     UQQCategory *cat = getCategory(id);
@@ -127,7 +130,7 @@ void UQQContact::addMemberToCategory(quint64 id, UQQMember *member) {
         cat->addMember(member);
     } else {
         qDebug() << "find a stranger:" << id << member->uin();
-        categories().last()->addMember(member); // add to stranger category
+        getCategory(UQQCategory::StrangerCategoryId)->addMember(member); // add to stranger category
     }
 }
 
@@ -137,7 +140,6 @@ UQQCategory * UQQContact::getCategory(quint64 id) {
             return m_categories.at(i);
         }
     }
-    //qDebug() << "catetory" << gid << "not found!";
     return Q_NULLPTR;
 }
 
@@ -175,6 +177,7 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
     Q_ASSERT(uin.length() > 0);
     UQQMember *member = this->member(uin);
     Q_CHECK_PTR(member);
+    if (!member) return;
 
     int oldStatus = member->status();
     member->setStatus(status);
@@ -184,6 +187,7 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
 
     UQQCategory *cat = getCategory(member->gid());
     Q_CHECK_PTR(cat);
+    if (!cat) return;
 
     if (oldStatus == UQQMember::OfflineStatus) {  // offline -> online
         cat->incOnline();
@@ -194,12 +198,17 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
 }
 
 QList<UQQMember *> UQQContact::membersInCategory(quint64 id, bool sorted) {
+    QList<UQQMember *> members;
     UQQCategory *c = getCategory(id);
     Q_CHECK_PTR(c);
-    if (sorted)
-        return c->sortedMembers();
-    else
-        return c->members();
+    if (!c) return members;
+
+    if (sorted) {
+        members = c->sortedMembers();
+    } else {
+        members = c->members();
+    }
+    return members;
 }
 
 void UQQContact::addSessMessage(UQQMessage *sessMessage) {

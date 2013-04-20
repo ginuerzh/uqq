@@ -32,7 +32,7 @@ public:
         PollMessageAction,
         SendBuddyMessageAction,
         SendGroupMessageAction,
-        SendGroupSessionMessageAction,
+        SendSessionMessageAction,
         LoadGroupsAction,
         LoadGroupInfoAction,
         GetGroupSigAction,
@@ -79,7 +79,7 @@ public:
     Q_INVOKABLE void changeStatus(QString status);
     Q_INVOKABLE void loadGroupInfo(quint64 gid);
     Q_INVOKABLE void getGroupSig(quint64 gid, QString dstUin);
-    Q_INVOKABLE void sendGroupSessionMessage(quint64 gid, QString dstUin, QString content);
+    Q_INVOKABLE void sendSessionMessage(quint64 gid, QString dstUin, QString content);
 
 private:
     void initClient();
@@ -143,7 +143,7 @@ private:
     void pollInputNotify(const QVariantMap &m);
     void pollMemberMessage(const QVariantMap &m);
     void pollGroupMessage(const QVariantMap &m);
-    void pollGroupSessionMessage(const QVariantMap &m);
+    void pollSessionMessage(const QVariantMap &m);
     void pollKickMessage(const QVariantMap &m);
 
     void parseLogout(const QByteArray &data);
@@ -168,7 +168,7 @@ private:
     void testLoadGroups();
     void testLoadGroupInfo(quint64 gid);
     void testGetGroupSig(quint64 gid, const QString &dstUin);
-    void testSendGroupSessionMessage(quint64 gid, QString dstUin, QString content);
+    void testSendSessionMessage(quint64 gid, QString dstUin, QString content);
 
     QString hashFriends(char *uin, char *ptwebqq);
 
@@ -184,7 +184,7 @@ signals:
     void pollReceived();
     void memberMessageReceived(quint64 gid);
     void groupMessageReceived(quint64 gid);
-    void groupSessionMessageReceived(quint64 gid);
+    void sessionMessageReceived(quint64 gid);
     void  buddyOnline(QString uin);
     void kicked(QString reason);
 

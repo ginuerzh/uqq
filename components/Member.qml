@@ -95,7 +95,7 @@ Rectangle {
                     if (modelData.isFriend)
                         QQ.Client.sendBuddyMessage(modelData.uin, content);
                     else
-                        QQ.Client.sendGroupSessionMessage(modelData.gid, modelData.uin, content);
+                        QQ.Client.sendSessionMessage(modelData.gid, modelData.uin, content);
                 }
             }
 
@@ -176,7 +176,6 @@ Rectangle {
                 ScriptAction {
                     script: {
                         if (modelData.detail == null) {
-                            //console.log("get member detail:" + modelData.gid + "/" + modelData.uin)
                             QQ.Client.getMemberDetail(modelData.gid, modelData.uin);
                         }
                     }
