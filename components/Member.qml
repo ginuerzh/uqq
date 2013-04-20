@@ -25,7 +25,7 @@ Rectangle {
             width: parent.width
 
             icon: modelData.face == "" ? "../friend.png" : modelData.face
-            markname: modelData.isFriend ? modelData.markname : modelData.card
+            markname: modelData.isFriend ? modelData.markname : modelData.card  // TODO
             nickname: modelData.nickname
             longnick: modelData.longnick
             online: modelData.status !== QQ.Member.OfflineStatus

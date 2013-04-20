@@ -27,8 +27,15 @@ Item {
 
                     width: parent.width
                     maxHeight: contact.height
-                    model: QQ.Client.getCategoryMembers(modelData.id);
-
+                    onOpenedChanged: {
+                        if (opened) {
+                            //console.log("opened")
+                            category.model = QQ.Client.getCategoryMembers(modelData.id);
+                        } else {
+                            //console.log("closed")
+                            category.model = 0;
+                        }
+                    }
                     title: modelData.name + " [" + modelData.online + "/" + modelData.total + "]"
 
                     Connections {
@@ -38,13 +45,6 @@ Item {
                                     category.newMsg = true;
                         }
                     }
-
-//                    onClicked: {
-//                        if (!loaded) {
-//                            loaded = true;
-//                            QQ.Client.loadInfoInCategory(modelData.id);
-//                        }
-//                    }
                 }
             }
         }

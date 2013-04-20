@@ -18,7 +18,6 @@ public:
     UQQCategory *getGroupById(quint64 gid);
     UQQCategory *getGroupByCode(quint64 gcode);
     QList<UQQMember *> memberInGroup(quint64 gid, bool sorted);
-    void setMemberDetail(quint64 gid, const QString &uin, const QVariantMap &m);
     
 signals:
     

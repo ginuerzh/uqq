@@ -107,9 +107,9 @@ QList<UQQMember *> UQQCategory::members() {
 
 UQQMember *UQQCategory::member(const QString &uin) {
     UQQMember *m = m_members.value(uin);
-    if (!m) {
-        qDebug() << "group member" << uin << "not found!";
-    }
+    //if (!m) {
+    //    qDebug() << "group member" << uin << "not found!";
+    //}
     return m;
 }
 

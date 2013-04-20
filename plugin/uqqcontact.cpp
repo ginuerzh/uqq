@@ -19,9 +19,7 @@ UQQContact::~UQQContact() {
  *       }
 */
 void UQQContact::setContactData(const QVariantMap &map) {
-
     setCategories(map.value("categories").toList());
-
     setMembers(map.value("friends").toList());
     setMarknames(map.value("marknames").toList());
     setVipInfo(map.value("vipinfo").toList());
@@ -30,24 +28,26 @@ void UQQContact::setContactData(const QVariantMap &map) {
 
 void UQQContact::addMember(UQQMember *member) {
     if (member) {
-        Q_ASSERT(member->uin().length() > 0);
+        Q_ASSERT(!member->uin().isEmpty());
         m_members.insert(member->uin(), member);
+        addMemberToCategory(member->gid(), member);
     }
 }
 
 void UQQContact::setMembers(const QVariantList &list) {
     QVariantMap m;
-
+    qDebug() << "set members...";
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
-        addMember(new UQQMember(m.value("categories").toInt(), m.value("uin").toString(), this));
+        addMember(new UQQMember(m.value("categories").toULongLong(), m.value("uin").toString(), this));
     }
+    qDebug() << "set members done, total members:" << list.size();
 }
 
 void UQQContact::setMarknames(const QVariantList &list) {
     QVariantMap m;
     UQQMember *member;
-
+    qDebug() << "set member marknames...";
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         member = this->member(m.value("uin").toString());
@@ -55,12 +55,13 @@ void UQQContact::setMarknames(const QVariantList &list) {
         if (member)
             member->setMarkname(m.value("markname").toString());
     }
+    qDebug() << "set member marknames done";
 }
 
 void UQQContact::setVipInfo(const QVariantList &list) {
     QVariantMap m;
     UQQMember *member;
-
+    qDebug() << "set members vip info...";
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         member = this->member(m.value("u").toString());
@@ -70,12 +71,13 @@ void UQQContact::setVipInfo(const QVariantList &list) {
             member->setVipLevel(m.value("vip_level").toInt());
         }
     }
+    qDebug() << "set members vip info done.";
 }
 
 void UQQContact::setNickname(const QVariantList &list) {
     QVariantMap m;
     UQQMember *member;
-
+    qDebug() << "set member nickname...";
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         member = this->member(m.value("uin").toString());
@@ -83,50 +85,14 @@ void UQQContact::setNickname(const QVariantList &list) {
         if (member)
             member->setNickname(m.value("nick").toString());
     }
-}
-
-void UQQContact::setMemberDetail(const QString &uin, const QVariantMap &m) {
-    UQQMember *member = this->member(uin);
-    Q_CHECK_PTR(member);
-    UQQMemberDetail *detail = Q_NULLPTR;
-
-    member->setNickname(m.value("nick").toString());
-
-    if ((detail = member->detail()) == Q_NULLPTR)
-        detail = new UQQMemberDetail(member);
-    detail->setFaceid(m.value("face").toInt());
-    detail->setOccupation(m.value("occupation").toString());
-    detail->setPhone(m.value("phone").toString());
-    detail->setAllow(m.value("allow").toBool());
-    detail->setCollege(m.value("college").toString());
-    detail->setConstel(m.value("constel").toInt());
-    detail->setBlood(m.value("blood").toInt());
-    detail->setHomepage(m.value("homepage").toString());
-    detail->setCountry(m.value("country").toString());
-    detail->setCity(m.value("city").toString());
-    detail->setPersonal(m.value("personal").toString());
-    detail->setShengxiao(m.value("shengxiao").toInt());
-    detail->setEmail(m.value("email").toString());
-    detail->setProvince(m.value("province").toString());
-    detail->setGender(UQQMemberDetail::genderIndex(m.value("gender").toString()));
-    detail->setMobile(m.value("mobile").toString());
-
-    QVariantMap birth = m.value("birthday").toMap();
-    int year = birth.value("year").toInt();
-    int month = birth.value("month").toInt();
-    int day = birth.value("day").toInt();
-    if (QDate::isValid(year, month, day)) {
-        QDateTime birth;
-        birth.setDate(QDate(year, month, day));
-        detail->setBirthday(birth);
-    }
-
-    member->setDetail(detail);
+    qDebug() << "set member nickname done.";
 }
 
 void UQQContact::setCategories(const QVariantList &list) {
     QVariantMap m;
+    int index = UQQCategory::BuddyCategoryId;
     UQQCategory *category = Q_NULLPTR;
+    qDebug() << "set categories...";
 /*
     category = new UQQCategory();
     category->setName("在线好友");
@@ -135,27 +101,39 @@ void UQQContact::setCategories(const QVariantList &list) {
 */
     category = new UQQCategory(this);
     category->setName("我的好友");
-    category->setId(UQQCategory::BuddyCategoryId);
+    category->setId(index);
     m_categories.append(category);
 
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         category = new UQQCategory(this);
         category->setName(m.value("name").toString());
-        category->setId(i + 1);
+        category->setId(++index);
         m_categories.append(category);
+    }
+    category = new UQQCategory();
+    category->setName("陌生人");
+    category->setId(++index);
+    m_categories.append(category);
+    qDebug() << "set categories done, total categories:" << index + 1;
+}
+
+void UQQContact::addMemberToCategory(quint64 id, UQQMember *member) {
+    Q_CHECK_PTR(member);
+    if (id == UQQCategory::IllegalCategoryId)
+        return;
+    UQQCategory *cat = getCategory(id);
+    if (cat) {
+        cat->addMember(member);
+    } else {
+        qDebug() << "find a stranger:" << id << member->uin();
+        categories().last()->addMember(member); // add to stranger category
     }
 }
 
-void UQQContact::addMemberToCategory(int category, UQQMember *member) {
-    Q_CHECK_PTR(member);
-    UQQCategory *cat = getCategory(category);
-    if (cat) cat->addMember(member);
-}
-
-UQQCategory * UQQContact::getCategory(quint64 gid) {
+UQQCategory * UQQContact::getCategory(quint64 id) {
     for (int i = 0; i < m_categories.size(); i++) {
-        if (m_categories.at(i)->id() == gid) {
+        if (m_categories.at(i)->id() == id) {
             return m_categories.at(i);
         }
     }
@@ -185,7 +163,7 @@ void UQQContact::setOnlineBuddies(const QVariantList &list) {
     QString uin;
     UQQMember *member;
 
-    //qDebug() << "online buddies:" << list.size();
+    qDebug() << "set online buddies...";
     // the list may contain duplicate entry
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
@@ -195,25 +173,9 @@ void UQQContact::setOnlineBuddies(const QVariantList &list) {
         member = this->member(uin);
         member->setStatus(UQQMember::statusIndex(status));
         member->setClientType(m.value("client_type").toInt());
+        getCategory(member->gid())->incOnline();
     }
-
-    setCategoryMembers();
-}
-
-void UQQContact::setCategoryMembers() {
-    UQQMember *member;
-    //qDebug() << "setCategoryMembers";
-    for (QHash<QString, UQQMember *>::const_iterator iter = m_members.begin();
-         iter != m_members.end(); iter++) {
-        member = iter.value();
-        addMemberToCategory(member->gid(), member);
-/*
-        if (member->status() != UQQMember::OfflineStatus &&
-                member->category() != UQQCategory::IllegalCategory) {
-            addMemberToCategory(UQQCategory::OnlineCategory, member);
-        }
-*/
-    }
+    qDebug() << "set online buddies done. online members:" << list.size();
 }
 
 void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
@@ -238,11 +200,29 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
     }
 }
 
-QList<UQQMember *> UQQContact::membersInCategory(quint64 catid, bool sorted) {
-    UQQCategory *c = getCategory(catid);
+QList<UQQMember *> UQQContact::membersInCategory(quint64 id, bool sorted) {
+    UQQCategory *c = getCategory(id);
     Q_CHECK_PTR(c);
     if (sorted)
         return c->sortedMembers();
     else
         return c->members();
+}
+
+void UQQContact::addSessMessage(UQQMessage *sessMessage) {
+    if (sessMessage) {
+        m_sessMessages.append(sessMessage);
+    }
+}
+
+QList<UQQMessage *> UQQContact::getSessMessage(const QString &uin) {
+    UQQMessage *message;
+    QList<UQQMessage *> messages;
+    for (int i = 0; i < m_sessMessages.size(); i++) {
+        message = m_sessMessages.at(i);
+        if (message->src() == uin) {
+            messages.append(message);
+        }
+    }
+    return messages;
 }

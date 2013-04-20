@@ -34,6 +34,15 @@ Item {
                     iconPageSource:"GroupMessage.qml"
                     messageCount: modelData.messageCount
 
+                    onOpenedChanged: {
+                        if (opened) {
+                            //console.log("opened")
+                            group.model = QQ.Client.getGroupMembers(modelData.id);
+                        } else {
+                            //console.log("closed")
+                            group.model = 0;
+                        }
+                    }
 
                     Connections {
                         target: QQ.Client
@@ -42,8 +51,6 @@ Item {
                                 group.model = QQ.Client.getGroupMembers(gid);
                                 group.loaded = true;
                             }
-                        }
-                        onGroupMessageReceived: {
                         }
                         onGroupSessionMessageReceived: {
                             if (gid == modelData.id && group.state == "")

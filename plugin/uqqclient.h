@@ -96,7 +96,6 @@ private:
 
     void getMemberFace(const QString &uin);
     void getGroupMemberFace(quint64 gid, const QString &uin);
-    void loadInfoInCategory(int category);
     void getLongNick(quint64 gid, const QString &uin);
     void parseLongNick(quint64 gid, const QString &uin, const QByteArray &data);
     void getMemberLevel(const QString &uin);
@@ -118,6 +117,7 @@ private:
     void loadGroups();
     void parseGroups(const QByteArray &data);
     void parseGroupInfo(quint64 gid, const QByteArray &data);
+    void setMemberDetail(UQQMember *member, const QVariantMap &m);
 
     QString buddyMessageData(QString dstUin, QString content);
     QString groupMessageData(QString groupUin, QString content);

@@ -17,8 +17,7 @@ Item {
     property alias iconPageSource: loader.source
     property int messageCount: 0
     property int onlineCount: 0
-
-
+    property bool opened: false
 
     signal clicked
     signal iconClicked
@@ -144,18 +143,13 @@ Item {
             topMargin: root.minHeight
         }
         opacity: 0
-        visible: opacity > 0
         clip: true
-        interactive: false
         delegate: Member {
             width: parent.width
         }
         onMovementEnded: {
-            var visibleyPos = visibleArea.yPosition * contentHeight;
-            var visibleHeight = visibleArea.heightRatio * contentHeight;
-
-            var begIndex = indexAt(0, visibleyPos);
-            var endIndx = indexAt(0, visibleyPos + visibleHeight);
+            var begIndex = indexAt(0, visibleArea.yPosition * contentHeight);
+            var endIndx = indexAt(0, (visibleArea.yPosition + visibleArea.heightRatio) * contentHeight);
             //console.log(visibleyPos + "," + visibleHeight + "," + contentHeight);
             //console.log("index(" + begIndex + ", " + endIndx + ")");
             if (begIndex < 0) begIndex = 0;
@@ -180,13 +174,11 @@ Item {
         }
         active: false
         opacity: 0
-        visible: opacity > 0
     }
 
     states: [
         State {
             name: "Expand"
-
             PropertyChanges {
                 target: root
                 height: maxHeight
@@ -201,11 +193,6 @@ Item {
             PropertyChanges {
                 target: memberView
                 opacity: 1
-                interactive: true
-            }
-            PropertyChanges {
-                target: loader
-                active: true
             }
         },
         State {
@@ -224,7 +211,6 @@ Item {
             }
             PropertyChanges {
                 target: loader
-                active: true
                 opacity: 1
             }
         }
@@ -233,7 +219,50 @@ Item {
 
     transitions: [
         Transition {
-            NumberAnimation { properties: "height,contentY,rotation,opacity" }
+            to: "Expand"
+            SequentialAnimation {
+                PropertyAction { target: root; property: "opened"; value: true }
+                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+            }
+        },
+        Transition {
+            from: "Expand"
+            SequentialAnimation {
+                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                PropertyAction { target: root; property: "opened"; value: false }
+            }
+        },
+        Transition {
+            to: "IconExpand"
+            SequentialAnimation {
+                PropertyAction { target: loader; property: "active"; value: true }
+                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+            }
+        },
+        Transition {
+            from: "IconExpand"
+            SequentialAnimation {
+                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                PropertyAction { target: loader; property: "active"; value: false }
+            }
+        },
+        Transition {
+            from: "Expand"
+            to: "IconExpand"
+            SequentialAnimation {
+                PropertyAction { target: loader; property: "active"; value: true }
+                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                PropertyAction { target: root; property: "opened"; value: false }
+            }
+        },
+        Transition {
+            from: "IconExpand"
+            to: "Expand"
+            SequentialAnimation {
+                PropertyAction { target: root; property: "opened"; value: true }
+                NumberAnimation { properties: "height,contentY,rotation,opacity" }
+                PropertyAction { target: loader; property: "active"; value: false }
+            }
         }
     ]
 }
