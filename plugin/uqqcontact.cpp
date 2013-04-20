@@ -159,21 +159,14 @@ UQQMember *UQQContact::member(const QString &uin) {
 
 void UQQContact::setOnlineBuddies(const QVariantList &list) {
     QVariantMap m;
-    QString status;
-    QString uin;
-    UQQMember *member;
 
     qDebug() << "set online buddies...";
-    // the list may contain duplicate entry
+    // the list may contain duplicate member
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
-        status = m.value("status").toString();
-        uin = m.value("uin").toString();
-        Q_ASSERT(uin.length() > 0);
-        member = this->member(uin);
-        member->setStatus(UQQMember::statusIndex(status));
-        member->setClientType(m.value("client_type").toInt());
-        getCategory(member->gid())->incOnline();
+        setBuddyStatus(m.value("uin").toString(),
+                       UQQMember::statusIndex(m.value("status").toString()),
+                       m.value("client_type").toInt());
     }
     qDebug() << "set online buddies done. online members:" << list.size();
 }

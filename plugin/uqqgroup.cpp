@@ -82,7 +82,6 @@ void UQQGroup::setGroupMembers(UQQCategory *group, const QVariantList &members, 
         m = members.at(i).toMap();
         uin = m.value("uin").toString();
         if ((member = contact->member(uin)) != Q_NULLPTR) {
-            //qDebug() << "set group member:" << uin << "in contact";
             group->addMember(member);
             continue;
         }
@@ -90,14 +89,6 @@ void UQQGroup::setGroupMembers(UQQCategory *group, const QVariantList &members, 
         member = new UQQMember(group->id(), uin, this);
         member->setNickname(m.value("nick").toString());
         member->setIsFriend(false);
-        /*  // this is not needed
-        detail = new UQQMemberDetail(member);
-        detail->setGender(UQQMemberDetail::genderIndex(m.value("gender").toString()));
-        detail->setCountry(m.value("country").toString());
-        detail->setProvince(m.value("province").toString());
-        detail->setCity(m.value("city").toString());
-        member->setDetail(detail);
-        */
         group->addMember(member);
     }
     qDebug() << "set group members done, group members:" << members.size();
@@ -106,7 +97,7 @@ void UQQGroup::setGroupMembers(UQQCategory *group, const QVariantList &members, 
 void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
     QVariantMap m;
     UQQMember *member;
-    qDebug() << "set group member stats...";
+    qDebug() << "set group member stats..." << group->name();
     for (int i = 0; i < stats.size(); i++) {
         m = stats.at(i).toMap();
         member = group->member(m.value("uin").toString());
@@ -114,9 +105,19 @@ void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
         if (member) {
             member->setClientType(m.value("client_type").toInt());
             member->setStatus(m.value("stat").toInt() / 10);
-            group->incOnline();
+            //group->incOnline();   // the online info has some problem
+            qDebug() << "group member" << member->nickname() << "status:" << member->status();
         }
     }
+
+    foreach(member, group->sortedMembers()) {
+        if (member->status() != UQQMember::OfflineStatus) {
+            group->incOnline();
+        } else {
+            break;
+        }
+    }
+
     qDebug() << "set group member stats done, online members:" << stats.size();
 }
 

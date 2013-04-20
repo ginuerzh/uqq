@@ -7,7 +7,6 @@ Item {
 
     Repeater {
         id: repeater
-        //anchors.fill: parent
         anchors {
             top: parent.top
             left: parent.left

@@ -133,11 +133,6 @@ void UQQCategory::addMember(UQQMember *member) {
 
     m_members.insert(member->uin(), member);
     emit totalChanged();
-
-    UQQMember *m = qobject_cast<UQQMember *>(member);
-    if (m->status() != UQQMember::OfflineStatus) {
-        incOnline();
-    }
 }
 
 int UQQCategory::removeMember(UQQMember *member) {

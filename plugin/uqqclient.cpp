@@ -420,7 +420,7 @@ void UQQClient::getMemberAccount(quint64 gid, const QString &uin) {
 }
 
 void UQQClient::getGroupAccount(const QString &uin) {
-    qDebug() << "request group" << uin << "account...";
+    qDebug() << "request group account...";
     getAccount(UQQCategory::IllegalCategoryId, uin, GetGroupAccountAction);
 }
 
@@ -463,7 +463,7 @@ void UQQClient::parseAccount(quint64 gid, const QString &uin, const QByteArray &
             UQQCategory *group = m_group->getGroupByCode(uin.toULongLong());
             Q_CHECK_PTR(group);
             group->setAccount(m.value("account").toULongLong());
-            qDebug() << "request group account done, group"<< gid << "account:" << group->account();
+            qDebug() << "request group account done, group" << gid << "account:" << group->account();
         }
     } else {
         qDebug() << "parseAccount:" << data;
@@ -1358,6 +1358,7 @@ void UQQClient::testPoll() {
 }
 
 void UQQClient::poll() {
+    qDebug() << QTime::currentTime().toString("hh:mm:ss") << "begin poll...";
     // for test
     TEST(testPoll())
 
@@ -1424,7 +1425,7 @@ void UQQClient::parsePoll(const QByteArray &data) {
     else {
         qWarning() << "parsePoll:" << data;
     }
-
+    qDebug() << QTime::currentTime().toString("hh:mm:ss") << "poll done.";
     emit pollReceived();
 }
 
