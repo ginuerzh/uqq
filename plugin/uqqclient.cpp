@@ -1,9 +1,7 @@
 #include "uqqclient.h"
 #include "uqqmemberdetail.h"
 
-//#define __TST
-
-#ifdef __TST
+#ifdef UQQ_TEST
 #define TEST(func) \
     func; return;
 #else
@@ -18,7 +16,7 @@ UQQClient::UQQClient(QObject *parent)
 
     initClient();
 
-#ifndef __TST
+#ifndef UQQ_TEST
     m_manager = new QNetworkAccessManager(this);
     QObject::connect(m_manager, &QNetworkAccessManager::finished,
                     this, &UQQClient::onFinished);
@@ -157,30 +155,23 @@ void UQQClient::testCheckCode(const QString &uin) {
 
 void UQQClient::checkCode(QString uin) {
     qDebug() << "check code...";
-    // for test
-    TEST(testCheckCode(uin))
-    /*
-     * this doesn't work :(, the package will be sent twice, I don't know why???
-     *
-    QUrlQuery query;
-    query.setQuery("http://check.ptlogin2.qq.com/check");
-    query.addQueryItem("uin", uin);
-    query.addQueryItem("appid", UQQClient::AID);
-    query.addQueryItem("r", "0.31415926535");
-    */
-    if (getLoginInfo("uin").toString() == uin) {
-        qDebug() << "Same uin" << uin;
-        //return;
-    }
+    TEST(testCheckCode(uin));
 
-    QString url = QString("http://check.ptlogin2.qq.com/check?&uin=%1&appid=%2&r=%3")
-            .arg(uin, getConfig("aid").toString(), getRandom());
+    QUrl url("http://check.ptlogin2.qq.com/check");
+    QUrlQuery query;
+    query.addQueryItem("uin", uin);
+    query.addQueryItem("appid", getLoginInfo("aid").toString());
+    query.addQueryItem("r", getRandom());
+    url.setQuery(query);
+
+    qDebug() << url.toString();
+
     QNetworkRequest request;
 
     addLoginInfo("uin", uin);
 
     request.setAttribute(QNetworkRequest::User, CheckCodeAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -211,16 +202,19 @@ void UQQClient::testGetCaptcha() {
 
 void UQQClient::getCaptcha() {
     qDebug() << "get captcha...";
-    //~ for test
-    TEST(testGetCaptcha())
+    TEST(testGetCaptcha());
 
-    QString url = QString("http://captcha.qq.com/getimage?uin=%1&aid=%2&r=%3")
-            .arg(getLoginInfo("uin").toString(),
-                 getLoginInfo("aid").toString(), getRandom());
+    QUrl url("http://captcha.qq.com/getimage");
+    QUrlQuery query;
+    query.addQueryItem("uin", getLoginInfo("uin").toString());
+    query.addQueryItem("aid", getLoginInfo("aid").toString());
+    query.addQueryItem("r", getRandom());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetCaptchaAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 
@@ -237,7 +231,8 @@ void UQQClient::saveCaptcha(const QByteArray &data) {
 }
 
 void UQQClient::logout() {
-    QString url = QString("GET /channel/logout2?ids=&clientid=%1&psessionid=%2&t=%3")
+
+    QString url = QString("/channel/logout2?ids=&clientid=%1&psessionid=%2&t=%3")
             .arg(getLoginInfo("clientid").toString(),
                  getLoginInfo("psessionid").toString(),
                  getTimestamp());
@@ -274,13 +269,33 @@ void UQQClient::testLogin(const QString &pwd, const QString &vc, const QString &
 }
 
 void UQQClient::login(QString uin, QString pwd, QString vc, QString status) {
-    //~ for test
     qDebug() << "request login...";
-    TEST(testLogin(pwd, vc, status))
+    TEST(testLogin(pwd, vc, status));
 
-    QString url = QString("http://ptlogin2.qq.com/login?u=%1&p=%2&verifycode=%3&aid=%4")
-            .arg(uin, pwd, vc, getLoginInfo("aid").toString()) +
-             "&webqq_type=10&remember_uin=0&login2qq=1&u1=http%3A%2F%2Fweb.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=2-6-22950&mibao_css=m_webqq&t=1&g=1";
+    QUrl url("http://ptlogin2.qq.com/login");
+    //QUrl u1("http://web.qq.com/loginproxy.html?login2qq=1&webqq_type=10");
+    QUrlQuery query;
+    query.addQueryItem("u", uin);
+    query.addQueryItem("p", pwd);
+    query.addQueryItem("verifycode", vc);
+    query.addQueryItem("aid", getLoginInfo("aid").toString());
+    query.addQueryItem("webqq_type", QString::number(10));
+    query.addQueryItem("remember_uin", QString::number(0));
+    query.addQueryItem("login2qq", QString::number(1));
+    //query.addQueryItem("u1", u1.toEncoded());
+    query.addQueryItem("h", QString::number(1));
+    query.addQueryItem("ptredirect", QString::number(0));
+    query.addQueryItem("ptlang", QString::number(2052));
+    query.addQueryItem("from_ui", QString::number(1));
+    query.addQueryItem("pttype", QString::number(1));
+    query.addQueryItem("fp", "loginerroralert");
+    query.addQueryItem("action", "2-6-22950");
+    query.addQueryItem("mibao_css", "m_webqq");
+    query.addQueryItem("t", QString::number(1));
+    query.addQueryItem("g", QString::number(1));
+    url.setQuery(query);
+    url = QUrl(url.toString().append("&u1=http%3A%2F%2Fweb.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10"));
+    qDebug() << url.toString();
 
     addLoginInfo("uin", uin);
     addLoginInfo("vc", vc);
@@ -290,7 +305,7 @@ void UQQClient::login(QString uin, QString pwd, QString vc, QString status) {
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, LoginAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -304,28 +319,30 @@ void UQQClient::verifyLogin(const QByteArray &data) {
         qDebug() << "login done.";
         secondLogin();
     } else {
-        qDebug() << data;
+        qWarning() << data;
         addLoginInfo("errMsg", list.at(4));
         if (errCode == CaptchaError) {   // get captcha again
             getCaptcha();
         }
     }
     emit errorChanged(errCode);
-
-    //qDebug() << list;
 }
 
 void UQQClient::autoReLogin() {
-    TEST(onLoginSuccess(getLoginInfo("uin").toString(), getLoginInfo("status").toString()))
+    TEST(onLoginSuccess(getLoginInfo("uin").toString(), getLoginInfo("status").toString()));
 
     secondLogin();
 }
 
 void UQQClient::secondLogin() {
     qDebug() << "request second login...";
-    QString url = "http://d.web2.qq.com/channel/login2";
-    QString ptwebqq = getCookie("ptwebqq", QUrl(url));
+
+    QUrl url("http://d.web2.qq.com/channel/login2");
+    qDebug() << url.toString();
+
+    QString ptwebqq = getCookie("ptwebqq", url);
     addLoginInfo("ptwebqq", ptwebqq);
+    qDebug() << "ptwebqq:" << ptwebqq;
 
     QVariantMap param;
     param.insert("status", getLoginInfo("status").toString());
@@ -338,11 +355,11 @@ void UQQClient::secondLogin() {
     QString p = "r=" + doc.toJson();
     p.append(QString("&clientid=%1&psessionid=%2")
              .arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
-    //qDebug() << "second login param:" << p;
-    QNetworkRequest request;
 
+
+    QNetworkRequest request;
     request.setAttribute(QNetworkRequest::User, SecondLoginAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
@@ -404,7 +421,8 @@ void UQQClient::getMemberDetail(quint64 gid, QString uin) {
         getMemberLevel(uin);
     } else {
         getStrangerInfo(gid, uin);
-        getGroupSig(gid, uin);
+        if (member->groupSig().isEmpty())
+            getGroupSig(gid, uin);
     }
     getMemberAccount(gid, uin);
 
@@ -429,16 +447,25 @@ void UQQClient::getGroupAccount(const QString &uin) {
 }
 
 void UQQClient::getAccount(quint64 gid, const QString &uin, Action action) {
-    TEST(testGetAccount(gid, uin, action))
+    qDebug() << "get account...";
+    TEST(testGetAccount(gid, uin, action));
 
-    QString url = QString("http://s.web2.qq.com/api/get_friend_uin2?tuin=%1&verifysession=&type=1&code=&vfwebqq=%2&t=%3")
-            .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
+    QUrl url("http://s.web2.qq.com/api/get_friend_uin2");
+    QUrlQuery query;
+    query.addQueryItem("tuin", uin);
+    query.addQueryItem("verifysession", "");
+    query.addQueryItem("type", QString::number(1));
+    query.addQueryItem("code", "");
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, action);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->get(request);
 }
@@ -463,6 +490,7 @@ void UQQClient::parseAccount(quint64 gid, const QString &uin, const QByteArray &
                 member->setDetail(detail);
             }
             member->detail()->setAccount(m.value("account").toULongLong());
+            qDebug() << "get account done." << member->detail()->account();
         } else {
             UQQCategory *group = m_group->getGroupByCode(uin.toULongLong());
             Q_CHECK_PTR(group);
@@ -486,16 +514,21 @@ void UQQClient::testGetLongNick(quint64 gid, const QString &uin) {
 }
 
 void UQQClient::getLongNick(quint64 gid, const QString &uin) {
-    TEST(testGetLongNick(gid, uin))
+    TEST(testGetLongNick(gid, uin));
 
-    QString url = QString("http://s.web2.qq.com/api/get_single_long_nick2?tuin=%1&vfwebqq=%2&t=%3")
-            .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
+    QUrl url("http://s.web2.qq.com/api/get_single_long_nick2");
+    QUrlQuery query;
+    query.addQueryItem("tuin", uin);
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    //qDebug() << url.toString();
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetLongNickAction);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -532,15 +565,19 @@ void UQQClient::testGetMemberLevel(const QString &uin) {
 }
 
 void UQQClient::getMemberLevel(const QString &uin) {
-    TEST(testGetMemberLevel(uin))
+    TEST(testGetMemberLevel(uin));
 
-    QString url = QString("http://s.web2.qq.com/api/get_qq_level2?tuin=%1&vfwebqq=%2")
-            .arg(uin, getLoginInfo("vfwebqq").toString());
+    QUrl url("http://s.web2.qq.com/api/get_qq_level2");
+    QUrlQuery query;
+    query.addQueryItem("tuin", uin);
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetMemberLevelAction);
     request.setAttribute(QNetworkRequest::UserMax, uin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -555,7 +592,6 @@ void UQQClient::getMemberLevel(const QString &uin) {
 }
 */
 void UQQClient::parseMemberLevel(const QString &uin, const QByteArray &data) {
-    //qDebug() << data;
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
     UQQMember *member = Q_NULLPTR;
@@ -589,16 +625,23 @@ void UQQClient::testGetMemberInfo(const QString &uin) {
 }
 
 void UQQClient::getMemberInfo(const QString &uin) {
-    // for test
-    TEST(testGetMemberInfo(uin))
+    TEST(testGetMemberInfo(uin));
 
-    QString url = QString("http://s.web2.qq.com/api/get_friend_info2?tuin=%1&vfwebqq=%2&t=%3")
-            .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
+    QUrl url("http://s.web2.qq.com/api/get_friend_info2");
+    QUrlQuery query;
+    query.addQueryItem("tuin", uin);
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
+    //QString url = QString("http://s.web2.qq.com/api/get_friend_info2?tuin=%1&vfwebqq=%2&t=%3")
+    //        .arg(uin, getLoginInfo("vfwebqq").toString(), getTimestamp());
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, GetMemberInfoAction);
     request.setAttribute(QNetworkRequest::UserMax, uin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->get(request);
 }
@@ -639,24 +682,32 @@ void UQQClient::testGetStrangerInfo(quint64 gid, const QString &uin) {
 }
 
 void UQQClient::getStrangerInfo(quint64 gid, const QString &uin) {
-    TEST(testGetStrangerInfo(gid, uin))
+    qDebug() << "get stranger info...";
+    TEST(testGetStrangerInfo(gid, uin));
 
-    QString url = QString("http://s.web2.qq.com/api/get_stranger_info2?tuin=%1&verifysession=&gid=0&code=&vfwebqq=%2&t=%3")
-            .arg(uin,
-                 getLoginInfo("vfwebqq").toString(),
-                 getTimestamp());
+    QUrl url("http://s.web2.qq.com/api/get_stranger_info2");
+    QUrlQuery query;
+    query.addQueryItem("tuin", uin);
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
+    //QString url = QString("http://s.web2.qq.com/api/get_stranger_info2?tuin=%1&verifysession=&gid=0&code=&vfwebqq=%2&t=%3")
+    //        .arg(uin,
+    //             getLoginInfo("vfwebqq").toString(),
+    //             getTimestamp());
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetStrangerInfoAction);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->get(request);
 }
 
 void UQQClient::parseStrangerInfo(quint64 gid, const QString &uin, const QByteArray &data) {
-    //qDebug() << data;
     UQQMember *member = Q_NULLPTR;
     QJsonObject obj = QJsonDocument::fromJson(data).object();
     QVariantMap m = obj.toVariantMap();
@@ -672,6 +723,7 @@ void UQQClient::parseStrangerInfo(quint64 gid, const QString &uin, const QByteAr
             }
             m_contact->addMember(member);
         }
+        qDebug() << "get stranger info done.";
         setMemberDetail(member, m.value("result").toMap());
     } else {
         qDebug() << "parseStrangerInfo:" << data;
@@ -744,18 +796,27 @@ void UQQClient::testGetFace(quint64 gid, const QString &uin) {
 }
 
 void UQQClient::getFace(quint64 gid, const QString &uin, int cache, int type) {
-    TEST(testGetFace(gid, uin))
+    TEST(testGetFace(gid, uin));
 
-    QString url = QString("http://face%1.qun.qq.com/cgi/svr/face/getface?cache=%2&type=%3&fid=0&uin=%4&vfwebqq=%5")
-            .arg(QString::number(qrand() % 10 + 1), // the random domain (face1 - face10)
-                 QString::number(cache), QString::number(type),
-                 uin, getLoginInfo("vfwebqq").toString());
+    QUrl url(QString("http://face%1.qun.qq.com/cgi/svr/face/getface").arg(QString::number(qrand() % 10 + 1)));
+    QUrlQuery query;
+    query.addQueryItem("cache", QString::number(cache));
+    query.addQueryItem("type", QString::number(type));
+    query.addQueryItem("uin", uin);
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    url.setQuery(query);
+    //qDebug() << url.toString();
+
+    //QString url = QString("http://face%1.qun.qq.com/cgi/svr/face/getface?cache=%2&type=%3&fid=0&uin=%4&vfwebqq=%5")
+    //        .arg(QString::number(qrand() % 10 + 1), // the random domain (face1 - face10)
+    //             QString::number(cache), QString::number(type),
+    //             uin, getLoginInfo("vfwebqq").toString());
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetUserFaceAction);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, uin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -783,15 +844,24 @@ void UQQClient::testChangeStatus(const QString &status) {
 }
 
 void UQQClient::changeStatus(QString status) {
-    TEST(testChangeStatus(status))
+    TEST(testChangeStatus(status));
 
-    QString url = QString("http://d.web2.qq.com/channel/change_status2?newstatus=%1&clientid=%2&psessionid=%3&t=%4")
-            .arg(status,
-                 getLoginInfo("clientid").toString(),
-                 getLoginInfo("psessionid").toString(),
-                 getTimestamp());
+    QUrl url("http://d.web2.qq.com/channel/change_status2");
+    QUrlQuery query;
+    query.addQueryItem("newstatus", status);
+    query.addQueryItem("clientid", getLoginInfo("clientid").toString());
+    query.addQueryItem("psessionid", getLoginInfo("psessionid").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
+    //QString url = QString("http://d.web2.qq.com/channel/change_status2?newstatus=%1&clientid=%2&psessionid=%3&t=%4")
+    //        .arg(status,
+    //             getLoginInfo("clientid").toString(),
+    //             getLoginInfo("psessionid").toString(),
+    //             getTimestamp());
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, ChangeStatusAction);
     request.setAttribute(QNetworkRequest::UserMax, status);
     request.setUrl(QUrl(url));
@@ -865,11 +935,10 @@ QString UQQClient::hashFriends(char *uin, char *ptwebqq) {
 
 void UQQClient::loadContact() {
     qDebug() << "request contact list...";
-    //~ for test
-    TEST(testLoadContact())
+    TEST(testLoadContact());
 
     QVariantMap param;
-    QString url = QString("http://s.web2.qq.com/api/get_user_friends2");
+    QUrl url("http://s.web2.qq.com/api/get_user_friends2");
 
     param.insert("h", "hello");
     param.insert("hash", hashFriends(getLoginInfo("uin").toString().toLatin1().data(), getLoginInfo("ptwebqq").toString().toLatin1().data()));
@@ -881,7 +950,7 @@ void UQQClient::loadContact() {
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, LoadContactAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
@@ -910,17 +979,24 @@ void UQQClient::testGetOnlineBuddies() {
 
 void UQQClient::getOnlineBuddies() {
     qDebug() << "request online buddies...";
-    //~ for test
-    TEST(testGetOnlineBuddies())
+    TEST(testGetOnlineBuddies());
 
-    QString url = QString("http://d.web2.qq.com/channel/get_online_buddies2?clientid=%1&psessionid=%2&t=%3")
-            .arg(getLoginInfo("clientid").toString(),
-                 getLoginInfo("psessionid").toString(),
-                 getTimestamp());
+    QUrl url("http://d.web2.qq.com/channel/get_online_buddies2");
+    QUrlQuery query;
+    query.addQueryItem("clientid", getLoginInfo("clientid").toString());
+    query.addQueryItem("psessionid", getLoginInfo("psessionid").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
+    //QString url = QString("http://d.web2.qq.com/channel/get_online_buddies2?clientid=%1&psessionid=%2&t=%3")
+    //        .arg(getLoginInfo("clientid").toString(),
+    //             getLoginInfo("psessionid").toString(),
+    //             getTimestamp());
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetOnlineBuddiesAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -951,19 +1027,19 @@ void UQQClient::testLoadGroups() {
 
 void UQQClient::loadGroups() {
     qDebug() << "request group list...";
-    TEST(testLoadGroups())
+    TEST(testLoadGroups());
 
-    QString url = QString("http://s.web2.qq.com/api/get_group_name_list_mask2");
+    QUrl url("http://s.web2.qq.com/api/get_group_name_list_mask2");
+
     QVariantMap param;
     QJsonDocument doc;
     QNetworkRequest request;
-
     param.insert("vfwebqq", getLoginInfo("vfwebqq"));
     doc.setObject(QJsonObject::fromVariantMap(param));
     QString p = "r=" + doc.toJson();
 
     request.setAttribute(QNetworkRequest::User, LoadGroupsAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
@@ -992,23 +1068,30 @@ void UQQClient::testLoadGroupInfo(quint64 gid) {
 }
 
 void UQQClient::loadGroupInfo(quint64 gid) {
-    qDebug() << "request group" << gid << "info...";
-    TEST(testLoadGroupInfo(gid))
+    qDebug() << "request group info..." << gid;
+    TEST(testLoadGroupInfo(gid));
 
     UQQCategory *group = m_group->getGroupById(gid);
     Q_CHECK_PTR(group);
     if (!group) return;
 
-    quint32 gcode = group->code();
-    QString url = QString("http://s.web2.qq.com/api/get_group_info_ext2?gcode=%1&vfwebqq=%2&t=%3")
-            .arg(QString::number(gcode),
-                 getLoginInfo("vfwebqq").toString(),
-                 getTimestamp());
+    QUrl url("http://s.web2.qq.com/api/get_group_info_ext2");
+    QUrlQuery query;
+    query.addQueryItem("gcode", QString::number(group->code()));
+    query.addQueryItem("vfwebqq", getLoginInfo("vfwebqq").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
+    //QString url = QString("http://s.web2.qq.com/api/get_group_info_ext2?gcode=%1&vfwebqq=%2&t=%3")
+    //        .arg(QString::number(gcode),
+    //             getLoginInfo("vfwebqq").toString(),
+    //             getTimestamp());
 
     QNetworkRequest request;
     request.setAttribute(QNetworkRequest::User, LoadGroupInfoAction);
     request.setAttribute(QNetworkRequest::UserMax, gid);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=1");
     m_manager->get(request);
 }
@@ -1037,13 +1120,13 @@ QString UQQClient::buddyMessageData(QString dstUin, QString content) {
     QVariantMap m;
     UQQMember *user = m_contact->member(getLoginInfo("uin").toString());
     Q_CHECK_PTR(user);
-
+/*
     QString p = QString("{\"to\":%1,\"face\":%2,\"content\":\"[\\\"%3\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%4,\"clientid\":\"%5\",\"psessionid\":\"%6\"}");
     p = p.arg(dstUin, QString::number(user->detail()->faceid()), content,
               QString::number(getRandomInt(10000000)), getLoginInfo("clientid").toString(),
               getLoginInfo("psessionid").toString());
     return p;
-
+*/
     qDebug() << dstUin.toLongLong();
     m.insert("to", dstUin);
     m.insert("face", user->detail()->faceid());
@@ -1093,7 +1176,7 @@ QString UQQClient::groupMessageData(QString groupUin, QString content) {
 void UQQClient::testSendBuddyMessage(QString dstUin, const QString &content) {
     QString p = "r=" + buddyMessageData(dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
-    //qDebug() << p;
+
     QString fromUin = getLoginInfo("uin").toString();
     UQQMember *member = m_contact->member(dstUin);
     Q_CHECK_PTR(member);
@@ -1121,19 +1204,16 @@ r={
   }&clientid=123456&psessionid=....
 */
 void UQQClient::sendBuddyMessage(QString dstUin, QString content) {
-    // for test
-    TEST(testSendBuddyMessage(dstUin, content))
+    TEST(testSendBuddyMessage(dstUin, content));
 
-    QString url = QString("http://d.web2.qq.com/channel/send_buddy_msg2");
+    QUrl url("http://d.web2.qq.com/channel/send_buddy_msg2");
     QString p = "r=" + buddyMessageData(dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
 
-    //qDebug() << p;
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, SendBuddyMessageAction);
     request.setAttribute(QNetworkRequest::UserMax, dstUin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
@@ -1169,7 +1249,6 @@ void UQQClient::parseMessage(const QString &uin, const QByteArray &data) {
 void UQQClient::testSendGroupMessage(quint64 gid, const QString &content) {
     QString p = "r=" + groupMessageData(QString::number(gid), content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
-    //qDebug() << p;
 
     QString fromUin = getLoginInfo("uin").toString();
     UQQCategory *group = m_group->getGroupById(gid);
@@ -1186,22 +1265,20 @@ void UQQClient::testSendGroupMessage(quint64 gid, const QString &content) {
 
 void UQQClient::sendGroupMessage(quint64 gid, QString content) {
     qDebug() << QTime::currentTime().toString("hh:mm:ss") << "send group message...";
-    TEST(testSendGroupMessage(gid, content))
+    TEST(testSendGroupMessage(gid, content));
 
     UQQCategory *group = m_group->getGroupById(gid);
     Q_CHECK_PTR(group);
     if (!group) return;
 
-    QString url = QString("http://d.web2.qq.com/channel/send_qun_msg2");
+    QUrl url("http://d.web2.qq.com/channel/send_qun_msg2");
     QString p = "r=" + groupMessageData(QString::number(gid), content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
 
-    //qDebug() << p;
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, SendGroupMessageAction);
     request.setAttribute(QNetworkRequest::UserMax, gid);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
@@ -1223,26 +1300,37 @@ void UQQClient::testGetGroupSig(quint64 gid, const QString &dstUin) {
     file.open(QIODevice::ReadOnly);
     QByteArray data = file.readAll();
     file.close();
-    //qDebug() << "test get group sig:" << gid << dstUin;
+
     parseGroupSig(gid, dstUin, data);
 }
 
 void UQQClient::getGroupSig(quint64 gid, QString dstUin) {
     qDebug() << "request group sig...";
-    TEST(testGetGroupSig(gid, dstUin))
+    TEST(testGetGroupSig(gid, dstUin));
 
-    QString url = QString("http://d.web2.qq.com/channel/get_c2cmsg_sig2?id=%1&to_uin=%2&service_type=0&clientid=%3&psessionid=%4&t=%5")
-            .arg(QString::number(gid),
-                 dstUin,
-                 getLoginInfo("clientid").toString(),
-                 getLoginInfo("psessionid").toString(),
-                 getTimestamp());
+    QUrl url("http://d.web2.qq.com/channel/get_c2cmsg_sig2");
+    QUrlQuery query;
+    query.addQueryItem("id", QString::number(gid));
+    query.addQueryItem("to_uin", dstUin);
+    query.addQueryItem("service_type", QString::number(0));
+    query.addQueryItem("clientid", getLoginInfo("clientid").toString());
+    query.addQueryItem("psessionid", getLoginInfo("psessionid").toString());
+    query.addQueryItem("t", getTimestamp());
+    url.setQuery(query);
+    qDebug() << url.toString();
+
+//    QString url = QString("http://d.web2.qq.com/channel/get_c2cmsg_sig2?id=%1&to_uin=%2&service_type=0&clientid=%3&psessionid=%4&t=%5")
+//            .arg(QString::number(gid),
+//                 dstUin,
+//                 getLoginInfo("clientid").toString(),
+//                 getLoginInfo("psessionid").toString(),
+//                 getTimestamp());
+
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, GetGroupSigAction);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, dstUin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->get(request);
 }
@@ -1287,7 +1375,6 @@ QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const 
 void UQQClient::testSendSessionMessage(quint64 gid, QString dstUin, QString content) {
     QString p = "r=" + sessionMessageData(gid, dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
-    //qDebug() << "group session message:" << p;
 
     QString fromUin = getLoginInfo("uin").toString();
     UQQCategory *group = m_group->getGroupById(gid);
@@ -1310,7 +1397,7 @@ void UQQClient::testSendSessionMessage(quint64 gid, QString dstUin, QString cont
 
 void UQQClient::sendSessionMessage(quint64 gid, QString dstUin, QString content) {
     qDebug() << "send session message...";
-    TEST(testSendSessionMessage(gid, dstUin, content))
+    TEST(testSendSessionMessage(gid, dstUin, content));
 
     QString fromUin = getLoginInfo("uin").toString();
     UQQCategory *group = m_group->getGroupById(gid);
@@ -1320,7 +1407,7 @@ void UQQClient::sendSessionMessage(quint64 gid, QString dstUin, QString content)
     Q_CHECK_PTR(member);
     if (!member) return;
 
-    QString url = QString("http://d.web2.qq.com/channel/send_sess_msg2");
+    QUrl url("http://d.web2.qq.com/channel/send_sess_msg2");
     QString p = "r=" + sessionMessageData(gid, dstUin, content);
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
 
@@ -1330,11 +1417,10 @@ void UQQClient::sendSessionMessage(quint64 gid, QString dstUin, QString content)
     }
 
     QNetworkRequest request;
-
     request.setAttribute(QNetworkRequest::User, SendSessionMessageAction);
     request.setAttribute(QNetworkRequest::Attribute(QNetworkRequest::User + 1), gid);
     request.setAttribute(QNetworkRequest::UserMax, dstUin);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
@@ -1379,11 +1465,10 @@ void UQQClient::testPoll() {
 
 void UQQClient::poll() {
     qDebug() << QTime::currentTime().toString("hh:mm:ss") << "begin poll...";
-    // for test
-    TEST(testPoll())
+    TEST(testPoll());
 
     QVariantMap param;
-    QString url = QString("http://d.web2.qq.com/channel/poll2");
+    QUrl url("http://d.web2.qq.com/channel/poll2");
 
     param.insert("clientid", getLoginInfo("clientid"));
     param.insert("psessionid", getLoginInfo("psessionid"));
@@ -1397,7 +1482,7 @@ void UQQClient::poll() {
     QNetworkRequest request;
 
     request.setAttribute(QNetworkRequest::User, PollMessageAction);
-    request.setUrl(QUrl(url));
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setRawHeader("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3");
     m_manager->post(request, QUrl::toPercentEncoding(p, "=&"));
