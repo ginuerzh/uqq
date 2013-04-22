@@ -19,7 +19,7 @@ Item {
     Connections {
         target: modelData
         onMessageReceived: {
-            loadMessages(modelData.newMessages());
+            loadMessages(modelData.messages(true));
         }
     }
 
@@ -56,21 +56,10 @@ Item {
                         text: name + "  " + time
                         color: isSend ? "blue" : "green"
                     }
-                    Item {
-                        width: parent.width
-                        height: contentText.height + units.gu(1)
-                        //color: "aquamarine"
 
-                        Label {
-                            id: contentText
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                leftMargin: units.gu(1)
-                            }
-                            wrapMode: Text.Wrap
-                            text: content
-                        }
+                    IconLabel {
+                        width: parent.width
+                        textContent: content
                     }
                 }
 
@@ -103,7 +92,8 @@ Item {
         }
     }
 
-    Component.onCompleted: {
+    function getFace(faceid) {
+        return "../res/face/default/" + faceid + ".gif";
     }
     Component.onDestruction: {
         //modelData.messageReceived.disconnect(onMessageReceived);

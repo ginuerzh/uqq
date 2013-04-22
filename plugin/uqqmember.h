@@ -53,7 +53,7 @@ public:
     Q_PROPERTY(UQQMemberDetail *detail READ detail NOTIFY detailChanged)
 
     explicit UQQMember(quint64 gid = 0, const QString &uin = "", QObject *parent = 0);
-    
+
     QString uin() const;
     void setUin(QString uin);
     quint64 gid() const;
@@ -93,8 +93,7 @@ public:
     void setMessageCount(int messageCount);
 
     void addMessage(UQQMessage *message);
-    Q_INVOKABLE QList<QObject *> messages();
-    Q_INVOKABLE QList<QObject *> newMessages();
+    Q_INVOKABLE QList<QObject *> messages(bool newMsg = false);
 
 private:
     QString m_uin;

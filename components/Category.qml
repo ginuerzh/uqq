@@ -154,7 +154,7 @@ Item {
         }
 
         function loadSimpleInfo(begIndex, endIndex) {
-            console.log("index(" + begIndex + ", " + endIndex + ")");
+            //console.log("index(" + begIndex + ", " + endIndex + ")");
             if (begIndex < 0) begIndex = 0;
             if (endIndex < 0 || endIndex >= count) endIndex = count - 1;
 

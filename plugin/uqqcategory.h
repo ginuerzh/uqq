@@ -66,8 +66,7 @@ public:
     void setMessageCount(int messageCount);
 
     void addMessage(UQQMessage *message);
-    Q_INVOKABLE QList<QObject *> messages();
-    Q_INVOKABLE QList<QObject *> newMessages();
+    Q_INVOKABLE QList<QObject *> messages(bool newMsg = false);
 
 signals:
     void accountChanged();

@@ -7,6 +7,8 @@
 
 #define TYPE_SEND -1
 
+typedef QMap<QByteArray, QByteArray> RequestHeaderMap;
+
 class UQQClient : public QObject {
 
     Q_OBJECT
@@ -87,6 +89,14 @@ private:
     QVariant getConfig(const QString &key) const;
     void addConfig(const QString &key, const QVariant &value);
 
+    void get(Action action, QUrl url,
+             const QVariantList &attributes = QVariantList(),
+             const RequestHeaderMap &headers = RequestHeaderMap());
+    void post(Action action, QUrl url,
+              const QByteArray &data = QByteArray(),
+              const QVariantList &attributes = QVariantList(),
+              const RequestHeaderMap &headers = RequestHeaderMap());
+    QVariant getResponseResult(const QByteArray &data, int *retCode = Q_NULLPTR);
     void verifyCode(const QString &data);
     void getCaptcha();
     void saveCaptcha(const QByteArray &data);
@@ -122,7 +132,7 @@ private:
     QString buddyMessageData(QString dstUin, QString content);
     QString groupMessageData(QString groupUin, QString content);
     QString sessionMessageData(quint64 gid, const QString &dstUin, const QString &content);
-    void parseMessage(const QString &uin, const QByteArray &data);
+    void onMessageSended(const QString &uin, const QByteArray &data);
     void parseChangeStatus(const QString &status, const QByteArray &data);
     void parseGroupSig(quint64 gid, const QString &dstUin, const QByteArray &data);
 
@@ -141,6 +151,7 @@ private:
     void parsePoll(const QByteArray &data);
     void pollStatusChanged(const QVariantMap &m);
     void pollInputNotify(const QVariantMap &m);
+    UQQMessage *parseMessage(QString fromUin, const QVariantMap &m);
     void pollMemberMessage(const QVariantMap &m);
     void pollGroupMessage(const QVariantMap &m);
     void pollSessionMessage(const QVariantMap &m);

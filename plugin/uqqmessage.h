@@ -35,6 +35,8 @@ public:
     void setDst(const QString &dst);
     QDateTime time() const;
     void setTime(const QDateTime &time);
+    quint32 replyIP() const;
+    void setReplyIP(quint32 replyIP);
     QString content() const;
     void setContent(const QString &content);
 
@@ -49,8 +51,8 @@ private:
     QString m_srcUin;
     QString m_dstUin;
     QString m_name;
-    QString m_replyIP;
     QDateTime m_time;
+    quint32 m_replyIP;
     QString m_content;
 
     int m_fontSize;

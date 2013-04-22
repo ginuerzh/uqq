@@ -21,8 +21,6 @@ void UQQGroup::setGroupList(const QVariantList &list) {
         group->setId(m.value("gid").toLongLong());
         group->setFlag(m.value("flag").toLongLong());
         group->setCode(m.value("code").toLongLong());
-        //qDebug() << m.value("flag").toLongLong() << m.value("gid").toLongLong()
-        //         << m.value("code").toLongLong() << m.value("name").toString();
         m_groups.append(group);
     }
     qDebug() << "group list done, total group:" << list.size();
@@ -35,18 +33,17 @@ void UQQGroup::setGroupMarkList(const QVariantList &list) {
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         group = getGroupById(m.value("uin").toULongLong());
-        Q_CHECK_PTR(group);
-        group->setMarkname(m.value("markname").toString());
+        if (q_check_ptr(group))
+            group->setMarkname(m.value("markname").toString());
     }
     qDebug() << "group markname list done, total markname list:" << list.size();
 }
 
 void UQQGroup::setGroupDetail(quint64 gid, const QVariantMap &map, UQQContact *contact) {
     UQQCategory *group = getGroupById(gid);
-    Q_CHECK_PTR(group);
-    if (!group) return;
-    QVariantMap m = map.value("ginfo").toMap();
+    if (!q_check_ptr(group)) return;
 
+    QVariantMap m = map.value("ginfo").toMap();
     setGroupInfo(group, map);
     setGroupMembers(group, map.value("minfo").toList(), contact);
     setMembersFlags(group, m.value("members").toList());
@@ -102,12 +99,9 @@ void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
     for (int i = 0; i < stats.size(); i++) {
         m = stats.at(i).toMap();
         member = group->member(m.value("uin").toString());
-        Q_CHECK_PTR(member);
-        if (member) {
+        if (q_check_ptr(member)) {
             member->setClientType(m.value("client_type").toInt());
             member->setStatus(m.value("stat").toInt() / 10);
-            //group->incOnline();   // the online info has some problem
-            //qDebug() << "group member" << member->nickname() << "status:" << member->status();
         }
     }
 
@@ -129,8 +123,7 @@ void UQQGroup::setMembersFlags(UQQCategory *group, const QVariantList &flags) {
     for (int i = 0; i < flags.size(); i++) {
         m = flags.at(i).toMap();
         member = group->member(m.value("muin").toString());
-        Q_CHECK_PTR(member);
-        if (member) {
+        if (q_check_ptr(member)) {
             member->setFlag(m.value("mflag").toInt());
         }
     }
@@ -145,8 +138,7 @@ void UQQGroup::setVipInfo(UQQCategory *group, const QVariantList &vips) {
     for (int i = 0; i < vips.size(); i++) {
         m = vips.at(i).toMap();
         member = group->member(m.value("u").toString());
-        Q_CHECK_PTR(member);
-        if (member) {
+        if (q_check_ptr(member)) {
             member->setVip(m.value("is_vip").toBool());
             member->setVipLevel(m.value("vip_level").toInt());
         }
@@ -161,9 +153,7 @@ void UQQGroup::setMembersCards(UQQCategory *group, const QVariantList &cards) {
     for (int i = 0; i < cards.size(); i++) {
         m = cards.at(i).toMap();
         member = group->member(m.value("muin").toString());
-        Q_CHECK_PTR(member);
-        if (member) {
-            //qDebug() << m.value("card").toString();
+        if (q_check_ptr(member)) {
             member->setCard(m.value("card").toString());
         }
     }
@@ -197,11 +187,14 @@ UQQCategory *UQQGroup::getGroupByCode(quint64 gcode) {
 }
 
 QList<UQQMember *> UQQGroup::memberInGroup(quint64 gid, bool sorted) {
-    UQQCategory *grp = getGroupById(gid);
-    Q_CHECK_PTR(grp);
+    QList<UQQMember *> members;
+    UQQCategory *group = getGroupById(gid);
+    if (!q_check_ptr(group)) return members;
+
     if (sorted)
-        return grp->sortedMembers();
+        members = group->sortedMembers();
     else
-        return grp->members();
+        members = group->members();
+    return members;
 }
 

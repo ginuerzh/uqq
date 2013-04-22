@@ -51,8 +51,7 @@ void UQQContact::setMarknames(const QVariantList &list) {
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         member = this->member(m.value("uin").toString());
-        Q_CHECK_PTR(member);
-        if (member)
+        if (q_check_ptr(member))
             member->setMarkname(m.value("markname").toString());
     }
     qDebug() << "set member marknames done";
@@ -65,8 +64,7 @@ void UQQContact::setVipInfo(const QVariantList &list) {
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         member = this->member(m.value("u").toString());
-        Q_CHECK_PTR(member);
-        if (member) {
+        if (q_check_ptr(member)) {
             member->setVip(m.value("is_vip").toBool());
             member->setVipLevel(m.value("vip_level").toInt());
         }
@@ -81,8 +79,7 @@ void UQQContact::setNickname(const QVariantList &list) {
     for (int i = 0; i < list.size(); i++) {
         m = list.at(i).toMap();
         member = this->member(m.value("uin").toString());
-        Q_CHECK_PTR(member);
-        if (member)
+        if (q_check_ptr(member))
             member->setNickname(m.value("nick").toString());
     }
     qDebug() << "set member nickname done.";
@@ -120,8 +117,7 @@ void UQQContact::setCategories(const QVariantList &list) {
 }
 
 void UQQContact::addMemberToCategory(quint64 id, UQQMember *member) {
-    Q_CHECK_PTR(member);
-    if (!member) return;
+    if (!q_check_ptr(member)) return;
 
     if (id == UQQCategory::IllegalCategoryId)
         return;
@@ -176,8 +172,7 @@ void UQQContact::setOnlineBuddies(const QVariantList &list) {
 void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
     Q_ASSERT(uin.length() > 0);
     UQQMember *member = this->member(uin);
-    Q_CHECK_PTR(member);
-    if (!member) return;
+    if (!q_check_ptr(member)) return;
 
     int oldStatus = member->status();
     member->setStatus(status);
@@ -186,8 +181,7 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
     if (oldStatus == status) return;
 
     UQQCategory *cat = getCategory(member->gid());
-    Q_CHECK_PTR(cat);
-    if (!cat) return;
+    if (!q_check_ptr(cat)) return;
 
     if (oldStatus == UQQMember::OfflineStatus) {  // offline -> online
         cat->incOnline();
@@ -199,14 +193,13 @@ void UQQContact::setBuddyStatus(QString uin, int status, int clientType) {
 
 QList<UQQMember *> UQQContact::membersInCategory(quint64 id, bool sorted) {
     QList<UQQMember *> members;
-    UQQCategory *c = getCategory(id);
-    Q_CHECK_PTR(c);
-    if (!c) return members;
+    UQQCategory *cat = getCategory(id);
+    if (!q_check_ptr(cat)) return members;
 
     if (sorted) {
-        members = c->sortedMembers();
+        members = cat->sortedMembers();
     } else {
-        members = c->members();
+        members = cat->members();
     }
     return members;
 }

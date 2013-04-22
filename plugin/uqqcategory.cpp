@@ -106,11 +106,7 @@ QList<UQQMember *> UQQCategory::members() {
 }
 
 UQQMember *UQQCategory::member(const QString &uin) {
-    UQQMember *m = m_members.value(uin);
-    //if (!m) {
-    //    qDebug() << "group member" << uin << "not found!";
-    //}
-    return m;
+    return m_members.value(uin);
 }
 
 bool sortLessThan(UQQMember *m1, UQQMember *m2) {
@@ -129,15 +125,15 @@ QList<UQQMember *> UQQCategory::sortedMembers() {
 }
 
 void UQQCategory::addMember(UQQMember *member) {
-    Q_CHECK_PTR(member);
-    if (member) {
+    if (q_check_ptr(member)) {
         m_members.insert(member->uin(), member);
         emit totalChanged();
     }
 }
 
 int UQQCategory::removeMember(UQQMember *member) {
-    Q_CHECK_PTR(member);
+    if (!q_check_ptr(member)) return 0;
+
     int count = m_members.remove(member->uin());
     if (count > 0) {
         if (member->status() == UQQMember::OfflineStatus)
@@ -162,46 +158,27 @@ void UQQCategory::decOnline() {
 }
 
 void UQQCategory::addMessage(UQQMessage *message) {
-    Q_CHECK_PTR(message);
-    m_messages.append(message);
+    if (!q_check_ptr(message)) return;
 
+    m_messages.append(message);
     setMessageCount(messageCount() + 1);
     emit messageReceived();
 }
 
-QList<QObject *> UQQCategory::messages() {
-    QList<QObject *> messages;
-    UQQMessage *msg;
+QList<QObject *> UQQCategory::messages(bool newMsg) {
     UQQMember *member;
-    foreach (msg, m_messages) {
-        member = this->member(msg->src());
-        Q_CHECK_PTR(member);
-        if (member)
-            msg->setName(member->markname() == "" ? member->nickname() : member->markname());
-        messages.append(msg);
-    }
-
-    setMessageCount(0);
-    return messages;
-}
-
-QList<QObject *> UQQCategory::newMessages() {
-    QList<QObject *> newMsgs;
-    UQQMessage *msg;
-    UQQMember *member;
-
-    if (messageCount() > 0) {
-        QList<UQQMessage *> messages = m_messages.mid(m_messages.count() - messageCount());
-        foreach (msg, messages) {
-            member = this->member(msg->src());
-            Q_CHECK_PTR(member);
-            if (member)
-                msg->setName(member->markname() == "" ? member->nickname() : member->markname());
-            newMsgs.append(msg);
-        }
+    QList<QObject *> results;
+    const QList<UQQMessage *> &messages =
+            newMsg ? m_messages.mid(m_messages.count() - messageCount()) : m_messages;
+    foreach (UQQMessage *message, messages) {
+        member = this->member(message->src());
+        if (q_check_ptr(member))
+            message->setName(member->card() == "" ? member->nickname() : member->card());
+        results.append(message);
     }
     setMessageCount(0);
-    return newMsgs;
+
+    return results;
 }
 
 int UQQCategory::messageCount() const {

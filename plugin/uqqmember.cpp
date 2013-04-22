@@ -189,25 +189,17 @@ void UQQMember::addMessage(UQQMessage *message) {
     emit messageReceived();
 }
 
-QList<QObject *> UQQMember::messages() {
-    QList<QObject *> messages;
-    for (int i = 0; i < m_messages.size(); i++)
-        messages.append(m_messages.at(i));
+QList<QObject *> UQQMember::messages(bool newMsg) {
+    QList<QObject *> results;
+    const QList<UQQMessage *> &messages =
+            newMsg ? m_messages.mid(m_messages.count() - messageCount()) : m_messages;
 
-    setMessageCount(0);
-    return messages;
-}
-
-QList<QObject *> UQQMember::newMessages() {
-    QList<QObject *> newMsgs;
-    if (messageCount() > 0) {
-        QList<UQQMessage *> messages = m_messages.mid(m_messages.count() - messageCount());
-        for (int i = 0; i < messages.count(); i++) {
-            newMsgs.append(messages.at(i));
-        }
+    foreach (UQQMessage *message, messages) {
+        results.append(message);
     }
     setMessageCount(0);
-    return newMsgs;
+
+    return results;
 }
 
 int UQQMember::messageCount() const {

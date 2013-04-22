@@ -3,6 +3,10 @@
 UQQMessage::UQQMessage(QObject *parent) :
     QObject(parent)
 {
+    setId(0);
+    setId2(0);
+    setType(0);
+    setReplyIP(0);
 }
 
 int UQQMessage::id() const {
@@ -52,6 +56,13 @@ QDateTime UQQMessage::time() const {
 }
 void UQQMessage::setTime(const QDateTime &time) {
     m_time = time;
+}
+
+quint32 UQQMessage::replyIP() const {
+    return m_replyIP;
+}
+void UQQMessage::setReplyIP(quint32 replyIP) {
+    m_replyIP = replyIP;
 }
 
 QString UQQMessage::content() const {
