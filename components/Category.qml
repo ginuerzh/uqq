@@ -144,6 +144,7 @@ Item {
         }
         opacity: 0
         clip: true
+
         delegate: Member {
             width: parent.width
         }
@@ -196,6 +197,7 @@ Item {
             PropertyChanges {
                 target: memberView
                 opacity: 1
+                interactive: true
             }
         },
         State {
