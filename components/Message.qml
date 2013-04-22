@@ -77,6 +77,17 @@ Item {
             TextField {
                 id: sendMsg
                 width: parent.width - sendBtn.width - units.gu(1)
+                primaryItem: Button {
+                    id: faceBtn
+                    width: units.gu(4)
+                    height: parent.height
+                    ItemStyle.class: "transparent-button"
+                    iconSource: Qt.resolvedUrl("../face.gif")
+                    onClicked: {
+                        facePopover.caller = faceBtn;
+                        facePopover.show();
+                    }
+                }
             }
             Button {
                 id: sendBtn
@@ -92,11 +103,17 @@ Item {
         }
     }
 
-    function getFace(faceid) {
-        return "../res/face/default/" + faceid + ".gif";
+    FaceIconPopover {
+        id: facePopover
+
+        onSelected: {
+            var face = "[face" + faceid + "]";
+            sendMsg.text += face;
+        }
     }
-    Component.onDestruction: {
-        //modelData.messageReceived.disconnect(onMessageReceived);
+
+    function getFace(faceid) {
+        return facePopover.faceDir + faceid + facePopover.faceSubfix;
     }
 
     function loadMessages(msgs) {

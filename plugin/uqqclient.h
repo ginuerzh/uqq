@@ -129,6 +129,7 @@ private:
     void parseGroupInfo(quint64 gid, const QByteArray &data);
     void setMemberDetail(UQQMember *member, const QVariantMap &m);
 
+    QString makeContent(const QString &content);
     QString buddyMessageData(QString dstUin, QString content);
     QString groupMessageData(QString groupUin, QString content);
     QString sessionMessageData(quint64 gid, const QString &dstUin, const QString &content);

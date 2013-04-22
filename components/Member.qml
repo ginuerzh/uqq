@@ -62,7 +62,6 @@ Rectangle {
             property int maxHeihgt: units.gu(23)
 
             width: parent.width
-            //height: maxHeihgt
             sourceComponent: MemberDetail {
                 property bool expanded: false
                 onClicked: {
@@ -123,9 +122,6 @@ Rectangle {
             PropertyChanges {
                 target: title
                 showNickname: true
-            }
-            PropertyChanges {
-                target: title
                 lnickExpanded: true
             }
         },
@@ -156,9 +152,6 @@ Rectangle {
             PropertyChanges {
                 target: title
                 showNickname: true
-            }
-            PropertyChanges {
-                target: title
                 lnickExpanded: true
             }
         }
@@ -171,7 +164,7 @@ Rectangle {
             SequentialAnimation {
                 ParallelAnimation {
                     NumberAnimation { properties: "contentY,height,opacity" }
-                    ColorAnimation {}
+                    //ColorAnimation {}
                 }
                 ScriptAction {
                     script: {
@@ -188,7 +181,7 @@ Rectangle {
             SequentialAnimation {
                 ParallelAnimation {
                     NumberAnimation { properties: "contentY,height,opacity" }
-                    ColorAnimation {}
+                    //ColorAnimation {}
                 }
                 PropertyAction {
                     target: detailLoader

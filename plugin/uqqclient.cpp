@@ -1037,103 +1037,76 @@ void UQQClient::parseGroupInfo(quint64 gid, const QByteArray &data) {
  * "content":"[\"hello\",[\"face\",1],\"world\",
  * [\"font\",{\"name\":\"宋体\",\"size\":\"10\",\"style\":[0,0,0],\"color\":\"000000\"}]]"
  */
-QvariantList makeContent(const QString &content) {
+QString UQQClient::makeContent(const QString &content) {
+    QString result = "[";
+    QString msg(content);
+    QRegExp facePattern("\\[face\\d{1,3}\\]");
+    QString faceContent;
+    int pos = 0;
+    QString fontContent = QString("[\"font\",{\"name\":\"Arial\",\"size\":\"10\",\"style\":[0,0,0],\"color\":\"000000\"}]");
 
+    while (!msg.isEmpty()) {
+        pos = msg.indexOf(facePattern);
+        if (pos < 0) {
+            result.append("\"").append(msg).append("\",");
+            msg.clear();
+        } else {
+            if (pos > 0) {      // append the text before the face
+                result.append("\"").append(msg.left(pos)).append("\",");
+                msg.remove(0, pos); // discard the text before the face
+            }
+            pos = msg.indexOf(']');
+            if (pos < 0) qWarning() << "face content unnormal.";
+            Q_ASSERT(pos > 0);
+            faceContent = msg.left(pos);    // exclude the last ']' character
+            result.append("[\"face\",").append(faceContent.mid(5)).append("],"); // get the face id;
+            msg.remove(0, pos + 1); // remove the face content
+        }
+    }
+
+    result.append(fontContent).append("]");
+    //qDebug() << result;
+
+    return result;
 }
 
 QString UQQClient::buddyMessageData(QString dstUin, QString content) {
     UQQMember *user = this->member(UQQCategory::IllegalCategoryId, getLoginInfo("uin").toString());
     if (!q_check_ptr(user)) return "";
-/*
-    QString p = QString("{\"to\":\"%1\",\"face\":\"%2\",\"content\":\"[\\\"%3\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%4,\"clientid\":\"%5\",\"psessionid\":\"%6\"}");
-    p = p.arg(dstUin, QString::number(user->detail()->faceid()), content,
-              QString::number(getRandomInt(10000000)), getLoginInfo("clientid").toString(),
-              getLoginInfo("psessionid").toString());
 
-    return p;
-*/
-    //qDebug() << dstUin;
-
-    QJsonObject obj; // = QJsonObject::fromVariantMap(m);
+    QJsonObject obj;
     obj.insert("to", dstUin);
     obj.insert("face", QString::number(user->detail()->faceid()));
     obj.insert("msg_id", QString::number(getRandomInt(10000000)));
     obj.insert("clientid", getLoginInfo("clientid").toString());
     obj.insert("psessionid", getLoginInfo("psessionid").toString());
 
-    makeContent(content);
+    obj.insert("content", makeContent(content));
 
     QJsonDocument doc(obj);
-    qDebug() << doc.toJson();
+    //qDebug() << doc.toJson();
     return doc.toJson();
-  /*
-
-    m.insert("to", dstUin.toULongLong());
-    m.insert("face", user->detail()->faceid());
-    m.insert("msg_id", QString::number(getRandomInt(10000000)));
-    m.insert("clientid", getLoginInfo("clientid").toString());
-    m.insert("psessionid", getLoginInfo("psessionid"));
-
-    QVariantList contents;
-    contents.append(content);
-
-    QVariantList font;
-    font.append("font");
-    QVariantMap fontObject;
-    fontObject.insert("name", "宋体");
-    fontObject.insert("size", "10");
-    fontObject.insert("color", "000000");
-
-    QVariantList style;
-    style.append(0);
-    style.append(0);
-    style.append(0);
-    fontObject.insert("style", style); // style: bold,italic,underline
-    font.append(fontObject);
-
-    contents.append(font);
-    m.insert("content", contents);
-*/
-
 }
 
 QString UQQClient::groupMessageData(QString groupUin, QString content) {
-
-    QString p = QString("{\"group_uin\":%1,\"content\":\"[\\\"%2\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%3,\"clientid\":\"%4\",\"psessionid\":\"%5\"}");
-    p = p.arg(groupUin,
-              content,
-              QString::number(getRandomInt(100000000)),
-              getLoginInfo("clientid").toString(),
-              getLoginInfo("psessionid").toString());
-    return p;
-
     QJsonObject obj;
     obj.insert("group_uin", groupUin);
     obj.insert("msg_id", QString::number(getRandomInt(10000000)));
     obj.insert("clientid", getLoginInfo("clientid").toString());
     obj.insert("psessionid", getLoginInfo("psessionid").toString());
 
+    obj.insert("content", makeContent(content));
+
     QJsonDocument doc(obj);
-    qDebug() << doc.toJson();
+    //qDebug() << doc.toJson();
     return doc.toJson();
 }
 
 QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const QString &content) {
-    QString p = QString("{\"to\":%1,\"group_sig\":\"%2\",\"face\":%3,\"service_type\":0,\"content\":\"[\\\"%4\\\",[\\\"font\\\",{\\\"name\\\":\\\"Arial\\\",\\\"size\\\":\\\"10\\\",\\\"style\\\":[0,0,0],\\\"color\\\":\\\"000000\\\"}]]\",\"msg_id\":%5,\"clientid\":\"%6\",\"psessionid\":\"%7\"}");
     UQQMember *user = this->member(UQQCategory::IllegalCategoryId, getLoginInfo("uin").toString());
     if (!q_check_ptr(user)) return "";
     UQQMember *member = this->member(gid, dstUin);
     if (!q_check_ptr(member)) return "";
-
-
-    p = p.arg(dstUin,
-              member->groupSig(),
-              QString::number(user->detail()->faceid()),
-              content,
-              QString::number(getRandomInt(100000000)),
-              getLoginInfo("clientid").toString(),
-              getLoginInfo("psessionid").toString());
-    return p;
 
     QJsonObject obj;
     obj.insert("to", dstUin);
@@ -1143,14 +1116,15 @@ QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const 
     obj.insert("clientid", getLoginInfo("clientid").toString());
     obj.insert("psessionid", getLoginInfo("psessionid").toString());
 
+    obj.insert("content", makeContent(content));
+
     QJsonDocument doc(obj);
-    qDebug() << doc.toJson();
+    //qDebug() << doc.toJson();
     return doc.toJson();
 }
 
 void UQQClient::testSendBuddyMessage(QString dstUin, const QString &content) {
     QString p = "r=" + buddyMessageData(dstUin, content);
-    return;
     p.append(QString("&clientid=%1&psessionid=%2").arg(getLoginInfo("clientid").toString(), getLoginInfo("psessionid").toString()));
 
     QString fromUin = getLoginInfo("uin").toString();
@@ -1430,7 +1404,7 @@ void UQQClient::parsePoll(const QByteArray &data) {
                 //qDebug() << data;
                 pollSessionMessage(m);
             } else if (pollType == "input_notify") {
-                qDebug() << data;
+                //qDebug() << data;
                 pollInputNotify(m);
             } else {
                 qWarning() << "Unknown poll type:" << pollType;
