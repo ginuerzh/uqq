@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
 import Ubuntu.Components.ListItems 0.1 as ListItem
+import Ubuntu.Components.Popups 0.1 as Popups
 import UQQ 1.0 as QQ
 
 Item {
@@ -84,8 +85,7 @@ Item {
                     ItemStyle.class: "transparent-button"
                     iconSource: Qt.resolvedUrl("../face.gif")
                     onClicked: {
-                        facePopover.caller = faceBtn;
-                        facePopover.show();
+                        Popups.PopupUtils.open(facePopover, sendMsg);
                     }
                 }
             }
@@ -103,17 +103,18 @@ Item {
         }
     }
 
-    FaceIconPopover {
+    Component {
         id: facePopover
-
-        onSelected: {
-            var face = "[face" + faceid + "]";
-            sendMsg.text += face;
+        FaceIconPopover {
+            onSelected: {
+                var face = "[face" + faceid + "]";
+                sendMsg.text += face;
+            }
         }
     }
 
     function getFace(faceid) {
-        return facePopover.faceDir + faceid + facePopover.faceSubfix;
+        return "../res/face/default/" + faceid + ".gif";
     }
 
     function loadMessages(msgs) {

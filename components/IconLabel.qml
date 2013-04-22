@@ -40,7 +40,7 @@ Flow {
         Label {
             property int maxWidth: parent.width
             wrapMode: Text.Wrap
-            width:Math.min(maxWidth, paintedWidth)
+            //width:Math.min(maxWidth, paintedWidth)
         }
     }
 }
