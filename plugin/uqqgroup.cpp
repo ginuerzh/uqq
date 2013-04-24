@@ -8,6 +8,21 @@ UQQGroup::UQQGroup(QObject *parent) :
 void UQQGroup::setGroupData(const QVariantMap &map) {
     setGroupList(map.value("gnamelist").toList());
     setGroupMarkList(map.value("gmarklist").toList());
+    setGroupMaskList(map.value("gmasklist").toList());
+}
+
+void UQQGroup::setGroupMaskList(const QVariantList &list) {
+    QVariantMap m;
+    UQQCategory *group = Q_NULLPTR;
+    qDebug() << "set group mask list...";
+    for (int i = 0; i < list.size(); i++) {
+        m = list.at(i).toMap();
+        group = getGroupById(m.value("gid").toULongLong());
+        if (group) {
+            group->setMessageMask(UQQCategory::GroupMessageMask(m.value("mask").toInt()));
+        }
+    }
+    qDebug() << "set group mask list done.";
 }
 
 void UQQGroup::setGroupList(const QVariantList &list) {

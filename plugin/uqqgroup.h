@@ -24,6 +24,7 @@ signals:
 public slots:
 
 private:
+    void setGroupMaskList(const QVariantList &list);
     void setGroupList(const QVariantList &list);
     void setGroupMarkList(const QVariantList &list);
     void setGroupInfo(UQQCategory *group, const QVariantMap &map);

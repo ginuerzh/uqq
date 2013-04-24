@@ -9,12 +9,20 @@
 class UQQCategory : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(GroupMessageMask)
+
 public:
 
     enum CategoryId {
         BuddyCategoryId,
         StrangerCategoryId = 0xFFFFFFFE,
         IllegalCategoryId = 0xFFFFFFFF
+    };
+
+    enum GroupMessageMask {
+        MessageNotify,
+        MessageNotNotify,
+        MessageBlocked
     };
 
     Q_PROPERTY(quint64 account READ account NOTIFY accountChanged)
@@ -26,6 +34,7 @@ public:
     Q_PROPERTY(UQQGroupInfo *groupInfo READ groupInfo NOTIFY groupInfoChanged)
     Q_PROPERTY(int messageCount READ messageCount NOTIFY messageCountChanged)
     Q_PROPERTY(bool groupReady READ groupReady NOTIFY groupReadyChanged)
+    Q_PROPERTY(GroupMessageMask messageMask READ messageMask NOTIFY messageMaskChanged)
 
     explicit UQQCategory(QObject *parent = 0);
     
@@ -50,6 +59,9 @@ public:
 
     bool groupReady() const;
     void setGroupReady(bool groupReady);
+
+    GroupMessageMask messageMask() const;
+    void setMessageMask(GroupMessageMask mask);
 
     //void setMembers(const QList<UQQMember *> &members);
     QList<UQQMember *> members();
@@ -80,6 +92,7 @@ signals:
     void messageCountChanged();
     void messageReceived();
     void groupReadyChanged();
+    void messageMaskChanged();
 
 public slots:
 
@@ -92,6 +105,8 @@ private:
     quint64 m_code;
     int m_online;
     bool m_groupReady;
+
+    GroupMessageMask m_messageMask;
 
     QHash<QString, UQQMember*> m_members;
     UQQGroupInfo *m_groupInfo;

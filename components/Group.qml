@@ -31,6 +31,7 @@ Item {
                     subtitle: (modelData.markname == "" ? "" : "(" + modelData.name + ")") +
                               (modelData.total > 0 ? " [" + modelData.online + "/" + modelData.total + "]" : "")
                     iconSource: "../group.png"
+                    statusSource: modelData.messageMask !== QQ.Category.MessageNotify ? "../block.png" : ""
                     iconPageSource:"GroupMessage.qml"
                     messageCount: modelData.messageCount
 

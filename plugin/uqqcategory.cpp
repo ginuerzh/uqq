@@ -11,6 +11,7 @@ UQQCategory::UQQCategory(QObject *parent) :
     m_groupInfo = Q_NULLPTR;
     m_groupReady = false;
     m_messageCount = 0;
+    m_messageMask = MessageNotify;
 }
 
 quint64 UQQCategory::account() const {
@@ -98,6 +99,16 @@ void UQQCategory::setGroupReady(bool groupReady) {
     if (m_groupReady != groupReady) {
         m_groupReady = groupReady;
         emit groupReadyChanged();
+    }
+}
+
+UQQCategory::GroupMessageMask UQQCategory::messageMask() const {
+    return m_messageMask;
+}
+void UQQCategory::setMessageMask(GroupMessageMask messageMask) {
+    if (m_messageMask != messageMask) {
+        m_messageMask = messageMask;
+        emit messageMaskChanged();
     }
 }
 

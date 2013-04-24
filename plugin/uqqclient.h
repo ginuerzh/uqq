@@ -38,7 +38,8 @@ public:
         LoadGroupsAction,
         LoadGroupInfoAction,
         GetGroupSigAction,
-        ChangeStatusAction
+        ChangeStatusAction,
+        SetGroupMaskAction
     };
 
     enum Error {
@@ -82,6 +83,7 @@ public:
     Q_INVOKABLE void loadGroupInfo(quint64 gid);
     Q_INVOKABLE void getGroupSig(quint64 gid, QString dstUin);
     Q_INVOKABLE void sendSessionMessage(quint64 gid, QString dstUin, QString content);
+    Q_INVOKABLE void setGroupMask(quint64 gid, int mask);
 
 private:
     void initClient();
@@ -133,9 +135,10 @@ private:
     QString buddyMessageData(QString dstUin, QString content);
     QString groupMessageData(QString groupUin, QString content);
     QString sessionMessageData(quint64 gid, const QString &dstUin, const QString &content);
-    void onMessageSended(const QString &uin, const QByteArray &data);
+    void onMessageSended(quint64 gid, const QString &uin, const QByteArray &data);
     void parseChangeStatus(const QString &status, const QByteArray &data);
     void parseGroupSig(quint64 gid, const QString &dstUin, const QByteArray &data);
+    void parseGroupMask(quint64 gid, int mask, const QByteArray &data);
 
     int parseParamList(const QString &data, QStringList &paramList);
     QString getCookie(const QString &name, QUrl url) const;
@@ -160,29 +163,10 @@ private:
 
     void parseLogout(const QByteArray &data);
 
-
-    // for test
-    void testCheckCode(const QString &uin);
-    void testGetCaptcha();
-    void testLoadContact();
-    void testGetOnlineBuddies();
-    void testLogin(const QString &pwd, const QString &vc, const QString &status);
     void testGetFace(quint64 gid, const QString &uin);
-    void testGetAccount(quint64 gid, const QString &uin, Action action);
-    void testGetMemberLevel(const QString &uin);
-    void testGetLongNick(quint64 gid, const QString &uin);
-    void testGetMemberInfo(const QString &uin);
-    void testGetStrangerInfo(quint64 gid, const QString &uin);
-    void testPoll();
-    void testSendBuddyMessage(QString dstUin, const QString &content);
-    void testSendGroupMessage(quint64 gid, const QString &content);
-    void testChangeStatus(const QString &status);
-    void testLoadGroups();
-    void testLoadGroupInfo(quint64 gid);
-    void testGetGroupSig(quint64 gid, const QString &dstUin);
-    void testSendSessionMessage(quint64 gid, QString dstUin, QString content);
 
     QString hashFriends(char *uin, char *ptwebqq);
+    QByteArray readFile(const QString &filename);
 
 signals:
     void errorChanged(int errCode);

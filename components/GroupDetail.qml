@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Ubuntu.Components 0.1
 import Ubuntu.Components.ListItems 0.1 as ListItem
+import UQQ 1.0 as QQ
 
 Item {
     id: detail
@@ -9,7 +10,6 @@ Item {
     property bool expanded: false
 
     height: expanded ? wrapper.height : minHeight
-    //signal clicked
 
     clip: true
 

@@ -14,6 +14,7 @@ Item {
     property int minHeight: units.gu(6.5)
     property int maxHeight
     property string iconSource
+    property string statusSource
     property alias iconPageSource: loader.source
     property int messageCount: 0
     property int onlineCount: 0
@@ -45,6 +46,13 @@ Item {
                 visible: source != ""
                 source: iconSource
 
+                Image {
+                    width: units.gu(1.5)
+                    height: width
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    source: statusSource
+                }
                 UbuntuShape {
                     width: newMsgCount.width + units.gu(0.5)
                     height: newMsgCount.height
