@@ -134,6 +134,7 @@ Item {
             Label {
                 text: "- 正在输入"
                 visible: inputNotify
+                font.bold: true
             }
         }
         Label {

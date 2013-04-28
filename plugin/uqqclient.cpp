@@ -948,7 +948,7 @@ void UQQClient::setGroupMask(quint64 gid, int mask) {
     const QString &p = query.toString(QUrl::FullyDecoded);
 
     qDebug() << url.toString();
-    qDebug() << p;
+    //qDebug() << p;
 
     QVariantList attributes;
     attributes << gid << mask;
@@ -1021,7 +1021,6 @@ QString UQQClient::buddyMessageData(QString dstUin, QString content) {
     obj.insert("content", makeContent(content));
 
     QJsonDocument doc(obj);
-    //qDebug() << doc.toJson();
     return doc.toJson();
 }
 
@@ -1035,7 +1034,6 @@ QString UQQClient::groupMessageData(QString groupUin, QString content) {
     obj.insert("content", makeContent(content));
 
     QJsonDocument doc(obj);
-    //qDebug() << doc.toJson();
     return doc.toJson();
 }
 
@@ -1056,7 +1054,6 @@ QString UQQClient::sessionMessageData(quint64 gid, const QString &dstUin, const 
     obj.insert("content", makeContent(content));
 
     QJsonDocument doc(obj);
-    //qDebug() << doc.toJson();
     return doc.toJson();
 }
 
