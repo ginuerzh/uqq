@@ -56,7 +56,7 @@ void UQQGroup::setGroupMarkList(const QVariantList &list) {
 
 void UQQGroup::setGroupDetail(quint64 gid, const QVariantMap &map, UQQContact *contact) {
     UQQCategory *group = getGroupById(gid);
-    if (!q_check_ptr(group)) return;
+    if (!q_check_ptr(group) || group->groupReady()) return;
 
     QVariantMap m = map.value("ginfo").toMap();
     setGroupInfo(group, map);
@@ -71,6 +71,7 @@ void UQQGroup::setGroupDetail(quint64 gid, const QVariantMap &map, UQQContact *c
 
 void UQQGroup::setGroupInfo(UQQCategory *group, const QVariantMap &map) {
     qDebug() << "set group info..." << group->id();
+
     QVariantMap m = map.value("ginfo").toMap();
     UQQGroupInfo *groupInfo = new UQQGroupInfo(group);
     groupInfo->setFaceid(m.value("face").toInt());
@@ -120,11 +121,10 @@ void UQQGroup::setMembersStats(UQQCategory *group, const QVariantList &stats) {
         }
     }
 
-    foreach(member, group->sortedMembers()) {
+    group->setOnline(0);
+    foreach(member, group->members()) {
         if (member->status() != UQQMember::OfflineStatus) {
             group->incOnline();
-        } else {
-            break;
         }
     }
 

@@ -8,20 +8,22 @@ https://www.youtube.com/watch?v=o99vtgglVWA
 
 please follow the below instructions:
 
-1). install the ubuntu-sdk:
+1) install the ubuntu-sdk:
 
 $ sudo add-apt-repository ppa:canonical-qt5-edgers/qt5-proper && sudo add-apt-repository ppa:ubuntu-sdk-team/ppa && sudo apt-get update && sudo apt-get install ubuntu-sdk notepad-qml
+
 $ sudo apt-get install gstreamer0.10-plugins-bad
 
 You can find more detail about the ubuntu-sdk in the official page: http://developer.ubuntu.com/get-started/gomobile/.
 
-2). get this app source code:
+2) get this app source code:
 
 $ git clone git://github.com/ginuerzh/uqq.git
 
-3). run:
+3) run:
 
 $ cd uqq
+
 $ sh uqq.sh
 
 After compiling, if no error occurs, then you should see the main window.
