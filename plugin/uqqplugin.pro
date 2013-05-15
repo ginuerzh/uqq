@@ -1,5 +1,5 @@
 TEMPLATE = lib
-CONFIG += qt plugin debug
+CONFIG += qt plugin
 QT += qml
 
 #DEFINES += QT_NO_DEBUG_OUTPUT QT_NO_WARNING_OUTPUT # no debug and warning output
