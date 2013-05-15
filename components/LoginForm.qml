@@ -66,7 +66,7 @@ Item {
             height: childrenRect.height
             color: "transparent"
 
-            Image {
+            AnimatedImage {
                 id: captchaImg
                 anchors.left: parent.left
                 height: loginButton.height
@@ -144,7 +144,7 @@ Item {
         if (needed) {
             captcha.visible = true;
             captchaImg.visible = true;
-            captchaImg.source = "../captcha.jpg";
+            captchaImg.source = "../" + QQ.Client.getLoginInfo("captcha");
         } else {
             captcha.visible = false;
             captchaImg.visible = false;

@@ -252,12 +252,14 @@ void UQQClient::getCaptcha() {
 }
 
 void UQQClient::saveCaptcha(const QByteArray &data) {
-    QFile file("captcha" + imageFormat(data));
+    QString capName("captcha" + imageFormat(data));
+    QFile file(capName);
 
     file.open(QIODevice::WriteOnly | QIODevice::Truncate);
     file.write(data);
     file.close();
     qDebug() << "get captcha done, captcha saved.";
+    addLoginInfo("captcha", capName);
     emit captchaChanged(true);
 }
 
@@ -1450,6 +1452,7 @@ QString UQQClient::imageFormat(const QByteArray &data) {
     QByteArray jpg = QByteArray("ffd8");
     QByteArray png = QByteArray("89504e470d0a1a0a");
     QByteArray bmp = QByteArray("424d");
+    QByteArray gif = QByteArray("4749463839");
     QByteArray header = data.left(8).toHex();
     //qDebug() << header.toHex();
 
@@ -1459,7 +1462,10 @@ QString UQQClient::imageFormat(const QByteArray &data) {
         return ".jpg";
     } else if (header.startsWith(bmp)) {
         return ".bmp";
+    } else if (header.startsWith(gif)) {
+        return ".gif";
     } else {
+        qWarning() << "Unknown image format, prefix:" << header;
         return "";
     }
 }
